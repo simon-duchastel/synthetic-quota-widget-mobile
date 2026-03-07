@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Synthetic Widget</string>
+    <string name="widget_description">Display your Synthetic API quota usage</string>
 </resources>
