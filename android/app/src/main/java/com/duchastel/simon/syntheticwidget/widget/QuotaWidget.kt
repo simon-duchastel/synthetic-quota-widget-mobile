@@ -152,6 +152,7 @@ fun QuotaBar(
                         night = Color(0xFFD1D5DB)
                     )
                 )
+            )
             
             Spacer(modifier = GlanceModifier.width(8.dp))
             
