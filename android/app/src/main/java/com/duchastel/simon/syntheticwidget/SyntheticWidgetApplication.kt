@@ -7,7 +7,7 @@ class SyntheticWidgetApplication : Application() {
     
     override fun onCreate() {
         super.onCreate()
-        // Schedule the periodic sync worker
+
         QuotaSyncWorker.schedule(this)
     }
 }

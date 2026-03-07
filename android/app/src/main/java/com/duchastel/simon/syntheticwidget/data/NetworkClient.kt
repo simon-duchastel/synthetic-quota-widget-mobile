@@ -29,7 +29,7 @@ object NetworkClient {
                 header("Authorization", "Bearer $API_KEY")
                 header("Content-Type", "application/json")
             }.body<QuotaResponse>()
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             // Return dummy data for now when API is not available
             QuotaResponse(
                 subscription = QuotaDetail(

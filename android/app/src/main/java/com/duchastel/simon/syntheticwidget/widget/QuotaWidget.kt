@@ -2,6 +2,8 @@ package com.duchastel.simon.syntheticwidget.widget
 
 import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.ColorFilter
@@ -10,13 +12,13 @@ import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.Image
 import androidx.glance.ImageProvider
-import androidx.glance.LocalContext
+import androidx.glance.LocalSize
 import androidx.glance.action.ActionParameters
-import androidx.glance.action.ActionCallback
 import androidx.glance.action.clickable
-import androidx.glance.action.actionRunCallback
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.action.ActionCallback
+import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
@@ -36,7 +38,6 @@ import androidx.glance.layout.width
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
-import androidx.glance.unit.Color
 import com.duchastel.simon.syntheticwidget.R
 import com.duchastel.simon.syntheticwidget.data.QuotaData
 import com.duchastel.simon.syntheticwidget.data.QuotaDataStore
@@ -44,7 +45,7 @@ import com.duchastel.simon.syntheticwidget.worker.QuotaSyncWorker
 import kotlinx.coroutines.flow.first
 
 class QuotaWidget : GlanceAppWidget() {
-    
+
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val quotaData = QuotaDataStore.getQuotaData(context).first()
         
@@ -131,6 +132,8 @@ fun QuotaBar(
     showRenewal: Boolean = false,
     renewalText: String = ""
 ) {
+    val width = LocalSize.current.width
+    val progressBarWidth = remember(width, progress) { width * progress }
     Column(modifier = GlanceModifier.fillMaxWidth()) {
         // Title row with count
         Row(
@@ -159,14 +162,13 @@ fun QuotaBar(
                     .cornerRadius(4.dp)
                     .background(backgroundColor)
             ) {
-                // Filled portion of the bar
                 Box(
                     modifier = GlanceModifier
                         .fillMaxHeight()
-                        .fillMaxWidth(progress)
+                        .width(progressBarWidth)
                         .background(barColor)
                         .cornerRadius(4.dp)
-                )
+                ) {}
             }
             
             Spacer(modifier = GlanceModifier.width(8.dp))
