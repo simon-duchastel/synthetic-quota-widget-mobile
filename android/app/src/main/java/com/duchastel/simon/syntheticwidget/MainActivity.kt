@@ -40,7 +40,6 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainScreen(viewModel: MainViewModel) {
-    val apiKey by viewModel.apiKey.collectAsState()
     val maskedApiKey by viewModel.maskedApiKey.collectAsState()
     var apiKeyInput by remember { mutableStateOf("") }
     

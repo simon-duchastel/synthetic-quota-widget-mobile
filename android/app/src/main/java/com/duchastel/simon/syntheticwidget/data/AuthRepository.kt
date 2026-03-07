@@ -4,20 +4,26 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
 interface AuthRepository {
-    fun getApiKey(): Flow<String?>
     suspend fun saveApiKey(apiKey: String)
-    fun getMaskedApiKey(apiKey: String?): String
+    fun getMaskedApiKey(): Flow<String>
 }
 
 class AuthRepositoryImpl : AuthRepository {
-    override fun getApiKey(): Flow<String?> {
+    
+    private fun getApiKey(): Flow<String?> {
         return flowOf(null)
     }
 
     override suspend fun saveApiKey(apiKey: String) {
     }
 
-    override fun getMaskedApiKey(apiKey: String?): String {
+    override fun getMaskedApiKey(): Flow<String> {
+        return flowOf("")
+    }
+}
+
+object ApiKeyMasker {
+    fun mask(apiKey: String?): String {
         if (apiKey.isNullOrEmpty()) {
             return ""
         }

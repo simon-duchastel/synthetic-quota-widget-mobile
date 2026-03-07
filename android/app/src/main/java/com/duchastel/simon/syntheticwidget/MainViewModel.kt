@@ -13,17 +13,13 @@ class MainViewModel(
     private val authRepository: AuthRepository = AuthRepositoryImpl()
 ) : ViewModel() {
     
-    private val _apiKey = MutableStateFlow<String?>(null)
-    val apiKey: StateFlow<String?> = _apiKey.asStateFlow()
-    
     private val _maskedApiKey = MutableStateFlow("")
     val maskedApiKey: StateFlow<String> = _maskedApiKey.asStateFlow()
     
     init {
         viewModelScope.launch {
-            authRepository.getApiKey().collect { key ->
-                _apiKey.value = key
-                _maskedApiKey.value = authRepository.getMaskedApiKey(key)
+            authRepository.getMaskedApiKey().collect { maskedKey ->
+                _maskedApiKey.value = maskedKey
             }
         }
     }
@@ -31,8 +27,9 @@ class MainViewModel(
     fun saveApiKey(apiKey: String) {
         viewModelScope.launch {
             authRepository.saveApiKey(apiKey)
-            _apiKey.value = apiKey
-            _maskedApiKey.value = authRepository.getMaskedApiKey(apiKey)
+            authRepository.getMaskedApiKey().collect { maskedKey ->
+                _maskedApiKey.value = maskedKey
+            }
         }
     }
 }
