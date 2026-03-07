@@ -84,9 +84,9 @@ fun QuotaWidgetContent(quotaData: QuotaData) {
             
             Spacer(modifier = GlanceModifier.height(8.dp))
             
-            // Free Tool Calls Section (Green theme)
+            // Tools Section (Green theme)
             QuotaBar(
-                title = "Free tool calls",
+                title = "Tools",
                 used = quotaData.toolRequests,
                 limit = quotaData.toolLimit,
                 progress = quotaData.toolProgress,
@@ -140,8 +140,10 @@ fun QuotaBar(
             modifier = GlanceModifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Title with fixed width for alignment
             Text(
                 text = title,
+                modifier = GlanceModifier.width(64.dp),
                 style = TextStyle(
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
@@ -150,7 +152,6 @@ fun QuotaBar(
                         night = Color(0xFFD1D5DB)
                     )
                 )
-            )
             
             Spacer(modifier = GlanceModifier.width(8.dp))
             
@@ -173,9 +174,10 @@ fun QuotaBar(
             
             Spacer(modifier = GlanceModifier.width(8.dp))
             
-            // Count display
+            // Count display with fixed width for alignment
             Text(
                 text = "$used/$limit",
+                modifier = GlanceModifier.width(56.dp),
                 style = TextStyle(
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
