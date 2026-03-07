@@ -41,7 +41,7 @@ class ApiKeyMaskerTest {
     @Test
     fun `mask returns all stars for key without syn_ prefix`() {
         val apiKey = "some_other_key_1234"
-        val expected = "*".repeat(apiKey.length)
+        val expected = "******************"
         
         assertEquals(expected, ApiKeyMasker.mask(apiKey))
     }
@@ -49,37 +49,30 @@ class ApiKeyMaskerTest {
     @Test
     fun `mask returns syn_ prefix with stars and last 4 digits for valid key`() {
         val apiKey = "syn_abcdefghijklmnop1234"
-        val result = ApiKeyMasker.mask(apiKey)
+        val expected = "syn_****************1234"
         
-        assertEquals(true, result.startsWith("syn_"))
-        assertEquals(true, result.endsWith("1234"))
-        assertEquals(apiKey.length, result.length)
+        assertEquals(expected, ApiKeyMasker.mask(apiKey))
     }
 
     @Test
     fun `mask returns original key when shorter than prefix plus 4 digits`() {
         val apiKey = "syn_1234"
         
-        assertEquals(apiKey, ApiKeyMasker.mask(apiKey))
+        assertEquals("syn_1234", ApiKeyMasker.mask(apiKey))
     }
 
     @Test
     fun `mask returns original key when exactly prefix plus 4 digits`() {
         val apiKey = "syn_abcd1234"
         
-        assertEquals(apiKey, ApiKeyMasker.mask(apiKey))
+        assertEquals("syn_abcd1234", ApiKeyMasker.mask(apiKey))
     }
 
     @Test
     fun `mask correctly handles long api key`() {
         val apiKey = "syn_very_long_api_key_with_many_characters_1234"
-        val result = ApiKeyMasker.mask(apiKey)
+        val expected = "syn_***************************************1234"
         
-        assertEquals("syn_", result.take(4))
-        assertEquals("1234", result.takeLast(4))
-        assertEquals(apiKey.length, result.length)
-        // Check middle is all stars
-        val middle = result.substring(4, result.length - 4)
-        assertEquals(true, middle.all { it == '*' })
+        assertEquals(expected, ApiKeyMasker.mask(apiKey))
     }
 }
