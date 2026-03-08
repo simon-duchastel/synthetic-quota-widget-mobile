@@ -113,15 +113,16 @@ fun QuotaWidgetContent(
                 horizontalAlignment = Alignment.Horizontal.End
             ) {
                 if (isLoading) {
-                    // Show loading indicator (spinning refresh icon)
-                    Image(
-                        provider = ImageProvider(R.drawable.ic_loading),
-                        contentDescription = "Refreshing...",
-                        modifier = GlanceModifier.size(24.dp),
-                        colorFilter = ColorFilter.tint(
-                            ColorProvider(
-                                day = Color(0xFF6B7280),
-                                night = Color(0xFF9CA3AF)
+                    // Show loading text
+                    Text(
+                        text = "Loading...",
+                        modifier = GlanceModifier.width(56.dp),
+                        style = TextStyle(
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Normal,
+                            color = ColorProvider(
+                                day = Color(0xFF1F2937),
+                                night = Color(0xFFF3F4F6)
                             )
                         )
                     )
