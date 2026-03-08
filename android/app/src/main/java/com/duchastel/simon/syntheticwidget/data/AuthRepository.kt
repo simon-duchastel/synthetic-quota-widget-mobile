@@ -1,24 +1,33 @@
 package com.duchastel.simon.syntheticwidget.data
 
+import android.content.Context
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 
 interface AuthRepository {
     suspend fun saveApiKey(apiKey: String)
+    suspend fun getApiKey(): String?
     fun getMaskedApiKey(): Flow<String>
 }
 
-class AuthRepositoryImpl : AuthRepository {
-    
-    private fun getApiKey(): Flow<String?> {
-        return flowOf(null)
-    }
+class AuthRepositoryImpl(
+    private val context: Context
+) : AuthRepository {
 
     override suspend fun saveApiKey(apiKey: String) {
+        QuotaDataStore.saveApiKey(context, apiKey)
+    }
+
+    override suspend fun getApiKey(): String? {
+        return QuotaDataStore.getApiKey(context)
     }
 
     override fun getMaskedApiKey(): Flow<String> {
-        return flowOf("")
+        return flow {
+            val apiKey = QuotaDataStore.getApiKey(context)
+            emit(ApiKeyMasker.mask(apiKey))
+        }
     }
 }
 
