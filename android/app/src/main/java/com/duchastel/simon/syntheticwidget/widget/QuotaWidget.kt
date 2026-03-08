@@ -48,12 +48,12 @@ import com.duchastel.simon.syntheticwidget.data.QuotaData
 import com.duchastel.simon.syntheticwidget.data.QuotaDataStore
 import com.duchastel.simon.syntheticwidget.worker.QuotaSyncWorker
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import java.io.File
 
 class QuotaWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val quotaData = QuotaDataStore.getQuotaData(context).first()
         val isLoading = QuotaDataStore.isLoading(context).first()
 
         provideContent {

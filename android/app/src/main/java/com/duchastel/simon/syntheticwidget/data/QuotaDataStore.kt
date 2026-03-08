@@ -116,13 +116,13 @@ object QuotaDataStore {
     }
 
     suspend fun setLoading(context: Context, loading: Boolean) {
-        context.dataStore.edit { preferences ->
+        context.quotaDataStore.edit { preferences ->
             preferences[IS_LOADING] = loading
         }
     }
 
     fun isLoading(context: Context): Flow<Boolean> {
-        return context.dataStore.data.map { preferences ->
+        return context.quotaDataStore.data.map { preferences ->
             preferences[IS_LOADING] ?: false
         }
     }
