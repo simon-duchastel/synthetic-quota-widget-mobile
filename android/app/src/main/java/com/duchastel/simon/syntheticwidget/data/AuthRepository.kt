@@ -1,8 +1,8 @@
 package com.duchastel.simon.syntheticwidget.data
 
-import android.content.Context
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import javax.inject.Inject
 
 interface AuthRepository {
     suspend fun saveApiKey(apiKey: String)
@@ -10,21 +10,21 @@ interface AuthRepository {
     fun getMaskedApiKey(): Flow<String>
 }
 
-class AuthRepositoryImpl(
-    private val context: Context
+class AuthRepositoryImpl @Inject constructor(
+    private val authDataStore: AuthDataStore
 ) : AuthRepository {
 
     override suspend fun saveApiKey(apiKey: String) {
-        AuthDataStore.saveApiKey(context, apiKey)
+        authDataStore.saveApiKey(apiKey)
     }
 
     override suspend fun getApiKey(): String? {
-        return AuthDataStore.getApiKey(context)
+        return authDataStore.getApiKey()
     }
 
     override fun getMaskedApiKey(): Flow<String> {
         return flow {
-            val apiKey = AuthDataStore.getApiKey(context)
+            val apiKey = authDataStore.getApiKey()
             emit(ApiKeyMasker.mask(apiKey))
         }
     }

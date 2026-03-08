@@ -1,31 +1,23 @@
 package com.duchastel.simon.syntheticwidget.data
 
-import android.content.Context
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.engine.android.Android
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.client.request.header
-import io.ktor.serialization.kotlinx.json.json
-import kotlinx.serialization.json.Json
+import javax.inject.Inject
 
-object NetworkClient {
-    private val client = HttpClient(Android) {
-        install(ContentNegotiation) {
-            json(Json {
-                ignoreUnknownKeys = true
-                isLenient = true
-            })
-        }
+class NetworkClient @Inject constructor(
+    private val httpClient: HttpClient,
+    private val authDataStore: AuthDataStore
+) {
+    companion object {
+        private const val API_URL = "https://api.synthetic.new/v2/quotas"
     }
 
-    private const val API_URL = "https://api.synthetic.new/v2/quotas"
+    suspend fun fetchQuotaData(): QuotaResponse {
+        val apiKey = authDataStore.getApiKey()
 
-    suspend fun fetchQuotaData(context: Context): QuotaResponse {
-        val apiKey = AuthDataStore.getApiKey(context)
-
-        return client.get(API_URL) {
+        return httpClient.get(API_URL) {
             apiKey?.let { key ->
                 header("Authorization", "Bearer $key")
             }
