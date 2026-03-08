@@ -15,16 +15,16 @@ class AuthRepositoryImpl(
 ) : AuthRepository {
 
     override suspend fun saveApiKey(apiKey: String) {
-        QuotaDataStore.saveApiKey(context, apiKey)
+        AuthDataStore.saveApiKey(context, apiKey)
     }
 
     override suspend fun getApiKey(): String? {
-        return QuotaDataStore.getApiKey(context)
+        return AuthDataStore.getApiKey(context)
     }
 
     override fun getMaskedApiKey(): Flow<String> {
         return flow {
-            val apiKey = QuotaDataStore.getApiKey(context)
+            val apiKey = AuthDataStore.getApiKey(context)
             emit(ApiKeyMasker.mask(apiKey))
         }
     }

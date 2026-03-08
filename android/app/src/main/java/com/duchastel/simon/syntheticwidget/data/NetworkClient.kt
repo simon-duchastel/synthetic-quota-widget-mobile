@@ -23,7 +23,7 @@ object NetworkClient {
     private const val API_URL = "https://api.synthetic.new/v2/quotas"
 
     suspend fun fetchQuotaData(context: Context): QuotaResponse {
-        val apiKey = QuotaDataStore.getApiKey(context)
+        val apiKey = AuthDataStore.getApiKey(context)
 
         return client.get(API_URL) {
             apiKey?.let { key ->
