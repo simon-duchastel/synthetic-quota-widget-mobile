@@ -9,7 +9,6 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 private val Context.quotaDataStore: DataStore<Preferences> by preferencesDataStore(name = "quota_preferences")
@@ -21,7 +20,6 @@ object QuotaDataStore {
     private val TOOL_REQUESTS = intPreferencesKey("tool_requests")
     private val SUB_RENEWS_AT = stringPreferencesKey("sub_renews_at")
     private val TOOL_RENEWS_AT = stringPreferencesKey("tool_renews_at")
-    private val ENCRYPTED_API_KEY = stringPreferencesKey("encrypted_api_key")
     private val IS_LOADING = booleanPreferencesKey("is_loading")
     
     suspend fun saveQuotaData(context: Context, quotaData: QuotaData): QuotaData {
@@ -84,35 +82,6 @@ object QuotaDataStore {
             toolRenewsAt = response.freeToolCalls.renewsAt
         )
         saveQuotaData(context, quotaData)
-    }
-
-    suspend fun saveApiKey(context: Context, apiKey: String) {
-        val encrypted = KeystoreManager.encryptApiKey(apiKey)
-        context.quotaDataStore.edit { preferences ->
-            if (encrypted != null) {
-                preferences[ENCRYPTED_API_KEY] = encrypted
-            } else {
-                preferences.remove(ENCRYPTED_API_KEY)
-            }
-        }
-    }
-
-    suspend fun getApiKey(context: Context): String? {
-        val encrypted = context.quotaDataStore.data.first()[ENCRYPTED_API_KEY]
-        return encrypted?.let { KeystoreManager.decryptApiKey(it) }
-    }
-
-    fun hasApiKey(context: Context): Flow<Boolean> {
-        return context.quotaDataStore.data.map { preferences ->
-            preferences[ENCRYPTED_API_KEY] != null
-        }
-    }
-
-    suspend fun clearApiKey(context: Context) {
-        KeystoreManager.clearApiKey()
-        context.quotaDataStore.edit { preferences ->
-            preferences.remove(ENCRYPTED_API_KEY)
-        }
     }
 
     suspend fun setLoading(context: Context, loading: Boolean) {
