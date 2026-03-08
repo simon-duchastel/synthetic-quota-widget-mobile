@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "quota_preferences")
+private val Context.quotaDataStore: DataStore<Preferences> by preferencesDataStore(name = "quota_preferences")
 
 object QuotaDataStore {
     private val SUB_LIMIT = intPreferencesKey("sub_limit")
@@ -22,8 +22,8 @@ object QuotaDataStore {
     private val TOOL_RENEWS_AT = stringPreferencesKey("tool_renews_at")
     private val ENCRYPTED_API_KEY = stringPreferencesKey("encrypted_api_key")
     
-    suspend fun saveQuotaData(context: Context, quotaData: QuotaData) {
-        context.dataStore.edit { preferences ->
+    suspend fun saveQuotaData(context: Context, quotaData: QuotaData): QuotaData {
+        context.quotaDataStore.edit { preferences ->
             preferences[SUB_LIMIT] = quotaData.subscriptionLimit
             preferences[SUB_REQUESTS] = quotaData.subscriptionRequests
             preferences[TOOL_LIMIT] = quotaData.toolLimit
@@ -31,10 +31,36 @@ object QuotaDataStore {
             quotaData.subscriptionRenewsAt?.let { preferences[SUB_RENEWS_AT] = it }
             quotaData.toolRenewsAt?.let { preferences[TOOL_RENEWS_AT] = it }
         }
+        return quotaData
     }
-    
+
+    suspend fun saveQuotaData(context: Context, transform: suspend (QuotaData) -> QuotaData): QuotaData {
+        return context.quotaDataStore.updateData { preferences ->
+            val currentData = QuotaData(
+                subscriptionLimit = preferences[SUB_LIMIT] ?: 135,
+                subscriptionRequests = preferences[SUB_REQUESTS] ?: 0,
+                toolLimit = preferences[TOOL_LIMIT] ?: 500,
+                toolRequests = preferences[TOOL_REQUESTS] ?: 34,
+                subscriptionRenewsAt = preferences[SUB_RENEWS_AT],
+                toolRenewsAt = preferences[TOOL_RENEWS_AT]
+            )
+
+           preferences.toMutablePreferences().apply { transform(currentData) }
+        }.let {
+            QuotaData(
+                subscriptionLimit = it[SUB_LIMIT] ?: 135,
+                subscriptionRequests = it[SUB_REQUESTS] ?: 0,
+                toolLimit = it[TOOL_LIMIT] ?: 500,
+                toolRequests = it[TOOL_REQUESTS] ?: 34,
+                subscriptionRenewsAt = it[SUB_RENEWS_AT],
+                toolRenewsAt = it[TOOL_RENEWS_AT]
+            )
+        }
+    }
+
+
     fun getQuotaData(context: Context): Flow<QuotaData> {
-        return context.dataStore.data.map { preferences ->
+        return context.quotaDataStore.data.map { preferences ->
             QuotaData(
                 subscriptionLimit = preferences[SUB_LIMIT] ?: 135,
                 subscriptionRequests = preferences[SUB_REQUESTS] ?: 0,
@@ -60,7 +86,7 @@ object QuotaDataStore {
 
     suspend fun saveApiKey(context: Context, apiKey: String) {
         val encrypted = KeystoreManager.encryptApiKey(apiKey)
-        context.dataStore.edit { preferences ->
+        context.quotaDataStore.edit { preferences ->
             if (encrypted != null) {
                 preferences[ENCRYPTED_API_KEY] = encrypted
             } else {
@@ -70,19 +96,19 @@ object QuotaDataStore {
     }
 
     suspend fun getApiKey(context: Context): String? {
-        val encrypted = context.dataStore.data.first()[ENCRYPTED_API_KEY]
+        val encrypted = context.quotaDataStore.data.first()[ENCRYPTED_API_KEY]
         return encrypted?.let { KeystoreManager.decryptApiKey(it) }
     }
 
     fun hasApiKey(context: Context): Flow<Boolean> {
-        return context.dataStore.data.map { preferences ->
+        return context.quotaDataStore.data.map { preferences ->
             preferences[ENCRYPTED_API_KEY] != null
         }
     }
 
     suspend fun clearApiKey(context: Context) {
         KeystoreManager.clearApiKey()
-        context.dataStore.edit { preferences ->
+        context.quotaDataStore.edit { preferences ->
             preferences.remove(ENCRYPTED_API_KEY)
         }
     }

@@ -6,6 +6,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.glance.ColorFilter
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
@@ -23,6 +25,7 @@ import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.color.ColorProvider
+import androidx.glance.currentState
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
@@ -35,6 +38,7 @@ import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
 import androidx.glance.layout.width
+import androidx.glance.state.GlanceStateDefinition
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
@@ -42,19 +46,39 @@ import com.duchastel.simon.syntheticwidget.R
 import com.duchastel.simon.syntheticwidget.data.QuotaData
 import com.duchastel.simon.syntheticwidget.data.QuotaDataStore
 import com.duchastel.simon.syntheticwidget.worker.QuotaSyncWorker
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.Flow
+import java.io.File
 
 class QuotaWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val quotaData = QuotaDataStore.getQuotaData(context).first()
-        
         provideContent {
             GlanceTheme {
-                QuotaWidgetContent(quotaData)
+                QuotaWidgetContent(currentState())
             }
         }
     }
+
+    override val stateDefinition: GlanceStateDefinition<QuotaData>
+        get() = object: GlanceStateDefinition<QuotaData> {
+            override suspend fun getDataStore(
+                context: Context,
+                fileKey: String
+            ): DataStore<QuotaData> {
+                return object : DataStore<QuotaData> {
+                    override val data: Flow<QuotaData>
+                        get() = QuotaDataStore.getQuotaData(context)
+
+                    override suspend fun updateData(transform: suspend (QuotaData) -> QuotaData): QuotaData {
+                        return QuotaDataStore.saveQuotaData(context, transform)
+                    }
+                }
+            }
+
+            override fun getLocation(context: Context, fileKey: String): File {
+                return context.preferencesDataStoreFile("quota_preferences")
+            }
+        }
 }
 
 @Composable
