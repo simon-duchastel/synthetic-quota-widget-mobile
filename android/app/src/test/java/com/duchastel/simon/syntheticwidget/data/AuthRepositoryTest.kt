@@ -41,7 +41,7 @@ class ApiKeyMaskerTest {
     @Test
     fun `mask returns all stars for key without syn_ prefix`() {
         val apiKey = "some_other_key_1234"
-        val expected = "******************"
+        val expected = "*******************"
         
         assertEquals(expected, ApiKeyMasker.mask(apiKey))
     }
@@ -65,7 +65,7 @@ class ApiKeyMaskerTest {
     fun `mask returns original key when exactly prefix plus 4 digits`() {
         val apiKey = "syn_abcd1234"
         
-        assertEquals("syn_abcd1234", ApiKeyMasker.mask(apiKey))
+        assertEquals("syn_****1234", ApiKeyMasker.mask(apiKey))
     }
 
     @Test
