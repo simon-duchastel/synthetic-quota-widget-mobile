@@ -47,18 +47,26 @@ import kotlinx.coroutines.flow.first
 class QuotaWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
+        // Combine quota data and loading state
         val quotaData = QuotaDataStore.getQuotaData(context).first()
+        val isLoading = QuotaDataStore.isLoading(context).first()
         
         provideContent {
             GlanceTheme {
-                QuotaWidgetContent(quotaData)
+                QuotaWidgetContent(
+                    quotaData = quotaData,
+                    isLoading = isLoading
+                )
             }
         }
     }
 }
 
 @Composable
-fun QuotaWidgetContent(quotaData: QuotaData) {
+fun QuotaWidgetContent(
+    quotaData: QuotaData,
+    isLoading: Boolean = false
+) {
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
@@ -103,19 +111,35 @@ fun QuotaWidgetContent(quotaData: QuotaData) {
                 modifier = GlanceModifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.Horizontal.End
             ) {
-                Image(
-                    provider = ImageProvider(R.drawable.ic_refresh),
-                    contentDescription = "Refresh",
-                    modifier = GlanceModifier
-                        .size(24.dp)
-                        .clickable(actionRunCallback<RefreshAction>()),
-                    colorFilter = ColorFilter.tint(
-                        ColorProvider(
-                            day = Color(0xFF6B7280),
-                            night = Color(0xFF9CA3AF)
+                if (isLoading) {
+                    // Show loading indicator (spinning refresh icon)
+                    Image(
+                        provider = ImageProvider(R.drawable.ic_loading),
+                        contentDescription = "Refreshing...",
+                        modifier = GlanceModifier.size(24.dp),
+                        colorFilter = ColorFilter.tint(
+                            ColorProvider(
+                                day = Color(0xFF6B7280),
+                                night = Color(0xFF9CA3AF)
+                            )
                         )
                     )
-                )
+                } else {
+                    // Show refresh button
+                    Image(
+                        provider = ImageProvider(R.drawable.ic_refresh),
+                        contentDescription = "Refresh",
+                        modifier = GlanceModifier
+                            .size(24.dp)
+                            .clickable(actionRunCallback<RefreshAction>()),
+                        colorFilter = ColorFilter.tint(
+                            ColorProvider(
+                                day = Color(0xFF6B7280),
+                                night = Color(0xFF9CA3AF)
+                            )
+                        )
+                    )
+                }
             }
         }
     }
@@ -213,6 +237,13 @@ class RefreshAction : ActionCallback {
         glanceId: GlanceId,
         parameters: ActionParameters
     ) {
+        // Set loading state to true
+        QuotaDataStore.setLoading(context, true)
+        
+        // Trigger widget update to show loading state
+        QuotaWidget().updateAll(context)
+        
+        // Start the sync worker
         QuotaSyncWorker.runImmediately(context)
     }
 }

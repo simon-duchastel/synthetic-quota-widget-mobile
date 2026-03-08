@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -21,6 +22,7 @@ object QuotaDataStore {
     private val SUB_RENEWS_AT = stringPreferencesKey("sub_renews_at")
     private val TOOL_RENEWS_AT = stringPreferencesKey("tool_renews_at")
     private val ENCRYPTED_API_KEY = stringPreferencesKey("encrypted_api_key")
+    private val IS_LOADING = booleanPreferencesKey("is_loading")
     
     suspend fun saveQuotaData(context: Context, quotaData: QuotaData) {
         context.dataStore.edit { preferences ->
@@ -84,6 +86,18 @@ object QuotaDataStore {
         KeystoreManager.clearApiKey()
         context.dataStore.edit { preferences ->
             preferences.remove(ENCRYPTED_API_KEY)
+        }
+    }
+
+    suspend fun setLoading(context: Context, loading: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[IS_LOADING] = loading
+        }
+    }
+
+    fun isLoading(context: Context): Flow<Boolean> {
+        return context.dataStore.data.map { preferences ->
+            preferences[IS_LOADING] ?: false
         }
     }
 }
