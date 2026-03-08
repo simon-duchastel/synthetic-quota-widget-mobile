@@ -44,42 +44,30 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.duchastel.simon.syntheticwidget.R
-import com.duchastel.simon.syntheticwidget.data.QuotaData
-import com.duchastel.simon.syntheticwidget.data.QuotaDataStore
+import com.duchastel.simon.syntheticwidget.data.QuotaWidgetState
+import com.duchastel.simon.syntheticwidget.data.WidgetDataStore
 import com.duchastel.simon.syntheticwidget.worker.QuotaSyncWorker
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import java.io.File
 
 class QuotaWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val isLoading = QuotaDataStore.isLoading(context).first()
-
         provideContent {
             GlanceTheme {
                 QuotaWidgetContent(
-                    quotaData = currentState(),
-                    isLoading = isLoading
+                    widgetData = currentState()
                 )
             }
         }
     }
 
-    override val stateDefinition: GlanceStateDefinition<QuotaData>
-        get() = object: GlanceStateDefinition<QuotaData> {
+    override val stateDefinition: GlanceStateDefinition<QuotaWidgetState>
+        get() = object : GlanceStateDefinition<QuotaWidgetState> {
             override suspend fun getDataStore(
                 context: Context,
                 fileKey: String
-            ): DataStore<QuotaData> {
-                return object : DataStore<QuotaData> {
-                    override val data: Flow<QuotaData>
-                        get() = QuotaDataStore.getQuotaData(context)
-
-                    override suspend fun updateData(transform: suspend (QuotaData) -> QuotaData): QuotaData {
-                        return QuotaDataStore.saveQuotaData(context, transform)
-                    }
-                }
+            ): DataStore<QuotaWidgetState> {
+                return WidgetDataStore
             }
 
             override fun getLocation(context: Context, fileKey: String): File {
@@ -90,8 +78,7 @@ class QuotaWidget : GlanceAppWidget() {
 
 @Composable
 fun QuotaWidgetContent(
-    quotaData: QuotaData,
-    isLoading: Boolean = false
+    widgetData: QuotaWidgetState
 ) {
     Box(
         modifier = GlanceModifier
@@ -109,35 +96,35 @@ fun QuotaWidgetContent(
             // Subscription Quota Section (Purple theme)
             QuotaBar(
                 title = "Requests",
-                used = quotaData.subscriptionRequests,
-                limit = quotaData.subscriptionLimit,
-                progress = quotaData.subscriptionProgress,
+                used = widgetData.subscriptionRequests,
+                limit = widgetData.subscriptionLimit,
+                progress = widgetData.subscriptionProgress,
                 barColor = Color(0xFF6366F1),
                 backgroundColor = Color(0xFFA5B4FC)
             )
-            
+
             Spacer(modifier = GlanceModifier.height(8.dp))
-            
+
             // Tools Section (Green theme)
             QuotaBar(
                 title = "Tools",
-                used = quotaData.toolRequests,
-                limit = quotaData.toolLimit,
-                progress = quotaData.toolProgress,
+                used = widgetData.toolRequests,
+                limit = widgetData.toolLimit,
+                progress = widgetData.toolProgress,
                 barColor = Color(0xFF10B981),
                 backgroundColor = Color(0xFFA7F3D0),
-                showRenewal = quotaData.toolRenewsAt != null,
-                renewalText = quotaData.toolRenewsAt?.let { "Renews in 23 hours and 21 minutes" } ?: ""
+                showRenewal = widgetData.toolRenewsAt != null,
+                renewalText = widgetData.toolRenewsAt?.let { "Renews in 23 hours and 21 minutes" } ?: ""
             )
-            
+
             Spacer(modifier = GlanceModifier.height(4.dp))
-            
+
             // Refresh button
             Row(
                 modifier = GlanceModifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.Horizontal.End
             ) {
-                if (isLoading) {
+                if (widgetData.isLoading) {
                     // Show loading text
                     Text(
                         text = "Loading...",
@@ -265,7 +252,7 @@ class RefreshAction : ActionCallback {
         parameters: ActionParameters
     ) {
         // Set loading state to true
-        QuotaDataStore.setLoading(context, true)
+        WidgetDataStore.setLoading(context, true)
 
         // Trigger widget update to show loading state
         QuotaWidget().updateAll(context)

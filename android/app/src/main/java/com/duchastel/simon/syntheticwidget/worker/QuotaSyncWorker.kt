@@ -11,7 +11,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.duchastel.simon.syntheticwidget.data.NetworkClient
-import com.duchastel.simon.syntheticwidget.data.QuotaDataStore
+import com.duchastel.simon.syntheticwidget.data.WidgetDataStore
 import com.duchastel.simon.syntheticwidget.widget.QuotaWidget
 import java.util.concurrent.TimeUnit
 
@@ -26,10 +26,10 @@ class QuotaSyncWorker(
             val quotaResponse = NetworkClient.fetchQuotaData(applicationContext)
 
             // Save to DataStore
-            QuotaDataStore.saveFromResponse(applicationContext, quotaResponse)
+            WidgetDataStore.saveFromResponse(applicationContext, quotaResponse)
 
             // Set loading state to false
-            QuotaDataStore.setLoading(applicationContext, false)
+            WidgetDataStore.setLoading(applicationContext, false)
 
             // Trigger widget update
             QuotaWidget().updateAll(applicationContext)
@@ -37,7 +37,7 @@ class QuotaSyncWorker(
             Result.success()
         } catch (_: Exception) {
             // Set loading state to false even on error
-            QuotaDataStore.setLoading(applicationContext, false)
+            WidgetDataStore.setLoading(applicationContext, false)
             
             // Trigger widget update to show error state
             QuotaWidget().updateAll(applicationContext)
