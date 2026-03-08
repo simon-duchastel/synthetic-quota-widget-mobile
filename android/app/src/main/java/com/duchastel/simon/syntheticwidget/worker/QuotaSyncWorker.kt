@@ -1,17 +1,15 @@
 package com.duchastel.simon.syntheticwidget.worker
 
 import android.content.Context
-import androidx.glance.appwidget.GlanceAppWidgetManager
-import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.appwidget.updateAll
+import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import androidx.work.Constraints
-import androidx.work.OneTimeWorkRequestBuilder
 import com.duchastel.simon.syntheticwidget.data.NetworkClient
 import com.duchastel.simon.syntheticwidget.data.QuotaDataStore
 import com.duchastel.simon.syntheticwidget.widget.QuotaWidget
@@ -30,12 +28,19 @@ class QuotaSyncWorker(
             // Save to DataStore
             QuotaDataStore.saveFromResponse(applicationContext, quotaResponse)
 
+<<<<<<< HEAD
             // Set loading state to false
             QuotaDataStore.setLoading(applicationContext, false)
 
             // Trigger widget update
             QuotaWidget().updateAll(applicationContext)
             
+=======
+            // Trigger widget update for all instances
+            val widget = QuotaWidget()
+            widget.updateAll(applicationContext)
+
+>>>>>>> main
             Result.success()
         } catch (_: Exception) {
             // Set loading state to false even on error
