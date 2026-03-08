@@ -7,10 +7,8 @@ import kotlinx.serialization.Serializable
 data class QuotaResponse(
     @SerialName("subscription")
     val subscription: QuotaDetail,
-    @SerialName("free_tool_calls")
+    @SerialName("freeToolCalls")
     val freeToolCalls: QuotaDetail,
-    @SerialName("search")
-    val search: SearchQuota? = null
 )
 
 @Serializable
@@ -19,16 +17,8 @@ data class QuotaDetail(
     val limit: Int,
     @SerialName("requests")
     val requests: Int,
-    @SerialName("renews_at")
+    @SerialName("renewsAt")
     val renewsAt: String? = null
-)
-
-@Serializable
-data class SearchQuota(
-    @SerialName("limit")
-    val limit: Int,
-    @SerialName("requests")
-    val requests: Int
 )
 
 @Serializable
@@ -45,7 +35,7 @@ data class QuotaData(
     
     val toolRemaining: Int
         get() = toolLimit - toolRequests
-    
+
     val subscriptionProgress: Float
         get() = if (subscriptionLimit > 0) subscriptionRequests.toFloat() / subscriptionLimit.toFloat() else 0f
     

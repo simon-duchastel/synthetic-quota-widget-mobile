@@ -25,7 +25,7 @@ class MainViewModel(
             }
         }
     }
-    
+
     fun saveApiKey(apiKey: String) {
         viewModelScope.launch {
             authRepository.saveApiKey(apiKey)
