@@ -9,7 +9,7 @@ class AuthRepositoryTest {
 
     @Test
     fun `getMaskedApiKey returns empty string when no api key saved`() = runBlocking {
-        val repository = AuthRepositoryImpl()
+        val repository = FakeAuthRepository()
         
         val result = repository.getMaskedApiKey().first()
         
@@ -17,12 +17,44 @@ class AuthRepositoryTest {
     }
 
     @Test
-    fun `saveApiKey does not throw exception`() = runBlocking {
-        val repository = AuthRepositoryImpl()
+    fun `saveApiKey saves api key and masks it correctly`() = runBlocking {
+        val repository = FakeAuthRepository()
+        val apiKey = "syn_test_api_key_1234"
         
-        repository.saveApiKey("syn_test_api_key_1234")
+        repository.saveApiKey(apiKey)
         
-        // No exception should be thrown
+        val maskedKey = repository.getMaskedApiKey().first()
+        assertEquals("syn_*************1234", maskedKey)
+        assertEquals(apiKey, repository.getApiKey())
+    }
+
+    @Test
+    fun `saveApiKey updates masked key after save`() = runBlocking {
+        val repository = FakeAuthRepository()
+        
+        repository.saveApiKey("syn_abcdefghijklmnop1234")
+        
+        val result = repository.getMaskedApiKey().first()
+        assertEquals("syn_****************1234", result)
+    }
+}
+
+/**
+ * Fake implementation of AuthRepository for unit testing
+ */
+class FakeAuthRepository : AuthRepository {
+    private var savedApiKey: String? = null
+    
+    override suspend fun saveApiKey(apiKey: String) {
+        savedApiKey = apiKey
+    }
+    
+    override suspend fun getApiKey(): String? {
+        return savedApiKey
+    }
+    
+    override fun getMaskedApiKey(): kotlinx.coroutines.flow.Flow<String> {
+        return kotlinx.coroutines.flow.flowOf(ApiKeyMasker.mask(savedApiKey))
     }
 }
 

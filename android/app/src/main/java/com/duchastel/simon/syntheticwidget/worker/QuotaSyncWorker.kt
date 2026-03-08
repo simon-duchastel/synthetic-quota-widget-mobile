@@ -25,8 +25,8 @@ class QuotaSyncWorker(
     override suspend fun doWork(): Result {
         return try {
             // Fetch data from API
-            val quotaResponse = NetworkClient.fetchQuotaData()
-            
+            val quotaResponse = NetworkClient.fetchQuotaData(applicationContext)
+
             // Save to DataStore
             QuotaDataStore.saveFromResponse(applicationContext, quotaResponse)
 

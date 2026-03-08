@@ -1,5 +1,6 @@
 package com.duchastel.simon.syntheticwidget.data
 
+import android.content.Context
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.android.Android
@@ -18,19 +19,20 @@ object NetworkClient {
             })
         }
     }
-    
-    // TODO: Replace with actual API key when provided
-    private const val API_KEY = "dummy-api-key-placeholder"
+
     private const val API_URL = "https://api.synthetic.com/v1/quota"
-    
-    suspend fun fetchQuotaData(): QuotaResponse {
+
+    suspend fun fetchQuotaData(context: Context): QuotaResponse {
+        val apiKey = QuotaDataStore.getApiKey(context)
+
         return try {
             client.get(API_URL) {
-                header("Authorization", "Bearer $API_KEY")
+                apiKey?.let { key ->
+                    header("Authorization", "Bearer $key")
+                }
                 header("Content-Type", "application/json")
             }.body<QuotaResponse>()
         } catch (_: Exception) {
-            // Return dummy data for now when API is not available
             QuotaResponse(
                 subscription = QuotaDetail(
                     limit = 135,

@@ -27,7 +27,9 @@ import com.duchastel.simon.syntheticwidget.ui.theme.SyntheticWidgetTheme
 
 class MainActivity : ComponentActivity() {
     
-    private val viewModel: MainViewModel by viewModels()
+    private val viewModel: MainViewModel by viewModels {
+        MainViewModel.Factory(applicationContext)
+    }
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
