@@ -2,8 +2,6 @@ package com.duchastel.simon.syntheticwidget.worker
 
 import android.content.Context
 import androidx.glance.appwidget.GlanceAppWidgetManager
-import androidx.glance.appwidget.state.updateAppWidgetState
-import androidx.glance.appwidget.updateAll
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
@@ -30,8 +28,15 @@ class QuotaSyncWorker(
             // Save to DataStore
             QuotaDataStore.saveFromResponse(applicationContext, quotaResponse)
 
-            // Trigger widget update
-            QuotaWidget().updateAll(applicationContext)
+            // Trigger widget update for all instances
+            val manager = GlanceAppWidgetManager(applicationContext)
+            val widget = QuotaWidget()
+            val glanceIds = manager.getGlanceIds(QuotaWidget::class.java)
+            
+            // Update each widget instance individually to ensure fresh data is read
+            glanceIds.forEach { glanceId ->
+                widget.update(applicationContext, glanceId)
+            }
             
             Result.success()
         } catch (_: Exception) {
