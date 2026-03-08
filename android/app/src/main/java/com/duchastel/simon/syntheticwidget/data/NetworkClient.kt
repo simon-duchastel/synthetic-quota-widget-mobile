@@ -20,31 +20,16 @@ object NetworkClient {
         }
     }
 
-    private const val API_URL = "https://api.synthetic.com/v1/quota"
+    private const val API_URL = "https://api.synthetic.new/v2/quotas"
 
     suspend fun fetchQuotaData(context: Context): QuotaResponse {
         val apiKey = QuotaDataStore.getApiKey(context)
 
-        return try {
-            client.get(API_URL) {
-                apiKey?.let { key ->
-                    header("Authorization", "Bearer $key")
-                }
-                header("Content-Type", "application/json")
-            }.body<QuotaResponse>()
-        } catch (_: Exception) {
-            QuotaResponse(
-                subscription = QuotaDetail(
-                    limit = 135,
-                    requests = 0,
-                    renewsAt = System.currentTimeMillis().plus(86400000).toString()
-                ),
-                freeToolCalls = QuotaDetail(
-                    limit = 500,
-                    requests = 34,
-                    renewsAt = System.currentTimeMillis().plus(85260000).toString()
-                )
-            )
-        }
+        return client.get(API_URL) {
+            apiKey?.let { key ->
+                header("Authorization", "Bearer $key")
+            }
+            header("Content-Type", "application/json")
+        }.body<QuotaResponse>()
     }
 }
