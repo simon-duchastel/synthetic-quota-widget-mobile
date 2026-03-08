@@ -28,12 +28,20 @@ class QuotaSyncWorker(
             // Save to DataStore
             QuotaDataStore.saveFromResponse(applicationContext, quotaResponse)
 
-            // Trigger widget update for all instances
-            val widget = QuotaWidget()
-            widget.updateAll(applicationContext)
+            // Set loading state to false
+            QuotaDataStore.setLoading(applicationContext, false)
+
+            // Trigger widget update
+            QuotaWidget().updateAll(applicationContext)
 
             Result.success()
         } catch (_: Exception) {
+            // Set loading state to false even on error
+            QuotaDataStore.setLoading(applicationContext, false)
+            
+            // Trigger widget update to show error state
+            QuotaWidget().updateAll(applicationContext)
+            
             Result.retry()
         }
     }
