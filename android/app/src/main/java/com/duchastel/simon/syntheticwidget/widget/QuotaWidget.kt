@@ -48,7 +48,6 @@ import kotlinx.coroutines.flow.first
 class QuotaWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        // Combine quota data and loading state
         val quotaData = QuotaDataStore.getQuotaData(context).first()
         val isLoading = QuotaDataStore.isLoading(context).first()
         
