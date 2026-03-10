@@ -30,6 +30,12 @@ data class QuotaWidgetState(
     val subscriptionRenewsAt: String? = null,
     val toolRenewsAt: String? = null,
     val isLoading: Boolean = false,
+    /**
+     * A UUID generated and stored by us for each widget instance.
+     * This is different from the GlanceId (which is system-assigned and can change).
+     * We use this ID to identify specific widget instances when syncing data,
+     * ensuring manual refreshes only affect the widget that was clicked.
+     */
     val widgetId: String = ""
 ) {
     val subscriptionRemaining: Int
