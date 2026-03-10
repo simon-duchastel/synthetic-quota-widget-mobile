@@ -2,6 +2,7 @@ package com.duchastel.simon.syntheticwidget.worker
 
 import android.content.Context
 import androidx.glance.appwidget.GlanceAppWidgetManager
+import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.appwidget.updateAll
 import androidx.hilt.work.HiltWorker
