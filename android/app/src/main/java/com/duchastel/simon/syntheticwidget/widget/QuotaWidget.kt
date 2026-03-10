@@ -21,7 +21,6 @@ import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
-import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.appwidget.updateAll
 import androidx.glance.background
@@ -59,11 +58,12 @@ class QuotaWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         // Generate and store widget ID if not already present
-        val currentWidgetId = context.getAppWidgetState(id)[WIDGET_ID]
+        val preferences = getAppWidgetState<androidx.datastore.preferences.core.Preferences>(context, id)
+        val currentWidgetId = preferences[WIDGET_ID]
         if (currentWidgetId.isNullOrEmpty()) {
             val newWidgetId = UUID.randomUUID().toString()
-            updateAppWidgetState(context, id) { preferences ->
-                preferences[WIDGET_ID] = newWidgetId
+            updateAppWidgetState(context, id) { prefs ->
+                prefs[WIDGET_ID] = newWidgetId
             }
         }
         
@@ -275,8 +275,8 @@ class RefreshAction : ActionCallback {
         parameters: ActionParameters
     ) {
         // Get the widget ID from the current state
-        val state = context.getAppWidgetState(glanceId)
-        val widgetId = state[WIDGET_ID] ?: ""
+        val preferences = QuotaWidget().getAppWidgetState<androidx.datastore.preferences.core.Preferences>(context, glanceId)
+        val widgetId = preferences[WIDGET_ID] ?: ""
         
         // Trigger widget update to show loading state
         updateAppWidgetState(context, glanceId) {

@@ -2,7 +2,6 @@ package com.duchastel.simon.syntheticwidget.worker
 
 import android.content.Context
 import androidx.glance.appwidget.GlanceAppWidgetManager
-import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.appwidget.updateAll
 import androidx.hilt.work.HiltWorker
@@ -48,14 +47,15 @@ class QuotaSyncWorker @AssistedInject constructor(
             val quotaResponse = networkClient.fetchQuotaData()
 
             // Filter widgets if a target widget ID is specified
+            val quotaWidget = QuotaWidget()
             val widgetsToUpdate = if (targetWidgetId.isNullOrEmpty()) {
                 // No widget ID specified - update all widgets
                 glanceIds
             } else {
                 // Filter to only widgets with matching widget ID
                 glanceIds.filter { glanceId ->
-                    val state = androidx.glance.appwidget.state.getAppWidgetState(applicationContext, glanceId)
-                    val widgetId = state[WIDGET_ID]
+                    val preferences = quotaWidget.getAppWidgetState<androidx.datastore.preferences.core.Preferences>(applicationContext, glanceId)
+                    val widgetId = preferences[WIDGET_ID]
                     widgetId == targetWidgetId
                 }
             }
