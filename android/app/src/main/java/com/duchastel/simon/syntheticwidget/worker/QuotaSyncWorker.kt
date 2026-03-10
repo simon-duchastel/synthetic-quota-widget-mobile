@@ -1,6 +1,8 @@
 package com.duchastel.simon.syntheticwidget.worker
 
 import android.content.Context
+import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.appwidget.updateAll
 import androidx.hilt.work.HiltWorker
 import androidx.work.Constraints
@@ -34,8 +36,22 @@ class QuotaSyncWorker @AssistedInject constructor(
             // Save to DataStore
             widgetDataStore.saveFromResponse(quotaResponse)
 
-            // Set loading state to false
-            widgetDataStore.setLoading(false)
+            // Set loading state to false in widget state
+            updateAppWidgetState(applicationContext, QuotaWidget()) { preferences ->
+                preferences[WidgetDataStore.IS_LOADING] = false
+            }
+
+            // Sync all data to widget state
+            val widgetData = com.duchastel.simon.syntheticwidget.data.QuotaWidgetState(
+                subscriptionLimit = quotaResponse.subscription.limit,
+                subscriptionRequests = quotaResponse.subscription.requests,
+                toolLimit = quotaResponse.freeToolCalls.limit,
+                toolRequests = quotaResponse.freeToolCalls.requests,
+                subscriptionRenewsAt = quotaResponse.subscription.renewsAt,
+                toolRenewsAt = quotaResponse.freeToolCalls.renewsAt,
+                isLoading = false
+            )
+            widgetDataStore.saveToWidgetState(applicationContext, widgetData)
 
             // Trigger widget update
             QuotaWidget().updateAll(applicationContext)
@@ -43,7 +59,9 @@ class QuotaSyncWorker @AssistedInject constructor(
             Result.success()
         } catch (_: Exception) {
             // Set loading state to false even on error
-            widgetDataStore.setLoading(false)
+            updateAppWidgetState(applicationContext, QuotaWidget()) { preferences ->
+                preferences[WidgetDataStore.IS_LOADING] = false
+            }
 
             // Trigger widget update to show error state
             QuotaWidget().updateAll(applicationContext)
