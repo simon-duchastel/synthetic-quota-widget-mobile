@@ -21,6 +21,7 @@ import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
+import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.appwidget.updateAll
 import androidx.glance.background
@@ -50,11 +51,22 @@ import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.SUB_R
 import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.TOOL_LIMIT
 import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.TOOL_RENEWS_AT
 import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.TOOL_REQUESTS
+import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.WIDGET_ID
 import com.duchastel.simon.syntheticwidget.worker.QuotaSyncWorker
+import java.util.UUID
 
 class QuotaWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
+        // Generate and store widget ID if not already present
+        val currentWidgetId = context.getAppWidgetState(id)[WIDGET_ID]
+        if (currentWidgetId.isNullOrEmpty()) {
+            val newWidgetId = UUID.randomUUID().toString()
+            updateAppWidgetState(context, id) { preferences ->
+                preferences[WIDGET_ID] = newWidgetId
+            }
+        }
+        
         provideContent {
             GlanceTheme {
                 QuotaWidgetContent(
@@ -66,6 +78,7 @@ class QuotaWidget : GlanceAppWidget() {
                         subscriptionRenewsAt = currentState(SUB_RENEWS_AT),
                         toolRenewsAt = currentState(TOOL_RENEWS_AT),
                         isLoading = currentState(IS_LOADING) ?: false,
+                        widgetId = currentState(WIDGET_ID) ?: "",
                     )
                 )
             }
@@ -261,6 +274,10 @@ class RefreshAction : ActionCallback {
         glanceId: GlanceId,
         parameters: ActionParameters
     ) {
+        // Get the widget ID from the current state
+        val state = context.getAppWidgetState(glanceId)
+        val widgetId = state[WIDGET_ID] ?: ""
+        
         // Trigger widget update to show loading state
         updateAppWidgetState(context, glanceId) {
             it.apply {
@@ -269,8 +286,8 @@ class RefreshAction : ActionCallback {
         }
         QuotaWidget().update(context, glanceId)
 
-        // Start the sync worker
-        QuotaSyncWorker.runImmediately(context)
+        // Start the sync worker with the widget ID
+        QuotaSyncWorker.runImmediately(context, widgetId)
     }
 }
 

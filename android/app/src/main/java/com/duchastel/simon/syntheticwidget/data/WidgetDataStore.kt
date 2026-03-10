@@ -29,5 +29,6 @@ class WidgetRepository @Inject constructor(
         val SUB_RENEWS_AT = stringPreferencesKey("sub_renews_at")
         val TOOL_RENEWS_AT = stringPreferencesKey("tool_renews_at")
         val IS_LOADING = booleanPreferencesKey("is_loading")
+        val WIDGET_ID = stringPreferencesKey("widget_id")
     }
 }

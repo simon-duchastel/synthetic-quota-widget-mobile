@@ -29,7 +29,8 @@ data class QuotaWidgetState(
     val toolRequests: Int = 34,
     val subscriptionRenewsAt: String? = null,
     val toolRenewsAt: String? = null,
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val widgetId: String = ""
 ) {
     val subscriptionRemaining: Int
         get() = subscriptionLimit - subscriptionRequests
