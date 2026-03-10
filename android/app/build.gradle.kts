@@ -35,12 +35,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
-    // Migrated kotlin{} block to android.kotlinOptions{}
-    kotlinOptions {
-        jvmTarget = "11"
-        javaParameters = true
-    }
-
     buildFeatures {
         compose = true
         viewBinding = true
