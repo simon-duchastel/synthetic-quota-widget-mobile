@@ -6,8 +6,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.glance.ColorFilter
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
@@ -23,6 +21,7 @@ import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
+import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.appwidget.updateAll
 import androidx.glance.background
 import androidx.glance.color.ColorProvider
@@ -39,82 +38,58 @@ import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
 import androidx.glance.layout.width
-import androidx.glance.state.GlanceStateDefinition
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.duchastel.simon.syntheticwidget.R
-import com.duchastel.simon.syntheticwidget.data.QuotaData
-import com.duchastel.simon.syntheticwidget.data.QuotaDataStore
+import com.duchastel.simon.syntheticwidget.data.QuotaWidgetState
+import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.IS_LOADING
+import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.SUB_LIMIT
+import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.SUB_RENEWS_AT
+import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.SUB_REQUESTS
+import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.TOOL_LIMIT
+import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.TOOL_RENEWS_AT
+import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.TOOL_REQUESTS
 import com.duchastel.simon.syntheticwidget.worker.QuotaSyncWorker
-import dagger.hilt.EntryPoint
-import dagger.hilt.InstallIn
-import dagger.hilt.android.EntryPointAccessors
-import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import java.io.File
 
 class QuotaWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val quotaDataStore = getQuotaDataStore(context)
-        val isLoading = quotaDataStore.isLoading().first()
-
         provideContent {
             GlanceTheme {
                 QuotaWidgetContent(
-                    quotaData = currentState(),
-                    isLoading = isLoading
+                    QuotaWidgetState(
+                        subscriptionLimit = currentState(SUB_LIMIT) ?: 135,
+                        subscriptionRequests = currentState(SUB_REQUESTS) ?: 0,
+                        toolLimit = currentState(TOOL_LIMIT) ?: 500,
+                        toolRequests = currentState(TOOL_REQUESTS) ?: 34,
+                        subscriptionRenewsAt = currentState(SUB_RENEWS_AT),
+                        toolRenewsAt = currentState(TOOL_RENEWS_AT),
+                        isLoading = currentState(IS_LOADING) ?: false,
+                    )
                 )
             }
         }
     }
-
-    override val stateDefinition: GlanceStateDefinition<QuotaData>
-        get() = object: GlanceStateDefinition<QuotaData> {
-            override suspend fun getDataStore(
-                context: Context,
-                fileKey: String
-            ): DataStore<QuotaData> {
-                val quotaDataStore = getQuotaDataStore(context)
-                return object : DataStore<QuotaData> {
-                    override val data: Flow<QuotaData>
-                        get() = quotaDataStore.getQuotaData()
-
-                    override suspend fun updateData(transform: suspend (QuotaData) -> QuotaData): QuotaData {
-                        return quotaDataStore.saveQuotaData(transform)
-                    }
-                }
-            }
-
-            override fun getLocation(context: Context, fileKey: String): File {
-                return context.preferencesDataStoreFile("quota_preferences")
-            }
-        }
-
-    companion object {
-        fun getQuotaDataStore(context: Context): QuotaDataStore {
-            val entryPoint = EntryPointAccessors.fromApplication(
-                context.applicationContext,
-                QuotaWidgetEntryPoint::class.java
-            )
-            return entryPoint.quotaDataStore()
-        }
-    }
-}
-
-@EntryPoint
-@InstallIn(SingletonComponent::class)
-interface QuotaWidgetEntryPoint {
-    fun quotaDataStore(): QuotaDataStore
 }
 
 @Composable
-fun QuotaWidgetContent(
-    quotaData: QuotaData,
-    isLoading: Boolean = false
-) {
+fun QuotaWidgetContent(quotaWidgetState: QuotaWidgetState) {
+
+    // Compute derived values
+    val subscriptionProgress = remember(quotaWidgetState.subscriptionRequests, quotaWidgetState.subscriptionLimit) {
+        if (quotaWidgetState.subscriptionLimit > 0) {
+            quotaWidgetState.subscriptionRequests.toFloat() / quotaWidgetState.subscriptionLimit.toFloat()
+        } else {
+            0f
+        }
+    }
+    val toolProgress = remember (quotaWidgetState.toolLimit, quotaWidgetState.toolRequests) {
+        if (quotaWidgetState.toolLimit > 0) {
+            quotaWidgetState.toolRequests.toFloat() / quotaWidgetState.toolLimit.toFloat()
+        } else 0f
+    }
+
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
@@ -128,35 +103,39 @@ fun QuotaWidgetContent(
             modifier = GlanceModifier.fillMaxSize(),
             horizontalAlignment = Alignment.Horizontal.Start
         ) {
+            // Subscription Quota Section (Purple theme)
             QuotaBar(
                 title = "Requests",
-                used = quotaData.subscriptionRequests,
-                limit = quotaData.subscriptionLimit,
-                progress = quotaData.subscriptionProgress,
+                used = quotaWidgetState.subscriptionRequests,
+                limit = quotaWidgetState.subscriptionLimit,
+                progress = subscriptionProgress,
                 barColor = Color(0xFF6366F1),
                 backgroundColor = Color(0xFFA5B4FC)
             )
-            
+
             Spacer(modifier = GlanceModifier.height(8.dp))
-            
+
+            // Tools Section (Green theme)
             QuotaBar(
                 title = "Tools",
-                used = quotaData.toolRequests,
-                limit = quotaData.toolLimit,
-                progress = quotaData.toolProgress,
+                used = quotaWidgetState.toolRequests,
+                limit = quotaWidgetState.toolLimit,
+                progress = toolProgress,
                 barColor = Color(0xFF10B981),
                 backgroundColor = Color(0xFFA7F3D0),
-                showRenewal = quotaData.toolRenewsAt != null,
-                renewalText = quotaData.toolRenewsAt?.let { "Renews in 23 hours and 21 minutes" } ?: ""
+                showRenewal = quotaWidgetState.toolRenewsAt != null,
+                renewalText = quotaWidgetState.toolRenewsAt?.let { "Renews in 23 hours and 21 minutes" } ?: ""
             )
-            
+
             Spacer(modifier = GlanceModifier.height(4.dp))
-            
+
+            // Refresh button
             Row(
                 modifier = GlanceModifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.Horizontal.End
             ) {
-                if (isLoading) {
+                if (quotaWidgetState.isLoading) {
+                    // Show loading text
                     Text(
                         text = "Loading...",
                         modifier = GlanceModifier.width(56.dp),
@@ -170,6 +149,7 @@ fun QuotaWidgetContent(
                         )
                     )
                 } else {
+                    // Show refresh button
                     Image(
                         provider = ImageProvider(R.drawable.ic_refresh),
                         contentDescription = "Refresh",
@@ -203,10 +183,12 @@ fun QuotaBar(
     val width = LocalSize.current.width
     val progressBarWidth = remember(width, progress) { width * progress }
     Column(modifier = GlanceModifier.fillMaxWidth()) {
+        // Title row with count
         Row(
             modifier = GlanceModifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Title with fixed width for alignment
             Text(
                 text = title,
                 modifier = GlanceModifier.width(64.dp),
@@ -219,9 +201,10 @@ fun QuotaBar(
                     )
                 )
             )
-            
+
             Spacer(modifier = GlanceModifier.width(8.dp))
-            
+
+            // Progress bar container
             Box(
                 modifier = GlanceModifier
                     .defaultWeight()
@@ -237,9 +220,10 @@ fun QuotaBar(
                         .cornerRadius(4.dp)
                 ) {}
             }
-            
+
             Spacer(modifier = GlanceModifier.width(8.dp))
-            
+
+            // Count display with fixed width for alignment
             Text(
                 text = "$used/$limit",
                 modifier = GlanceModifier.width(56.dp),
@@ -253,7 +237,8 @@ fun QuotaBar(
                 )
             )
         }
-        
+
+        // Renewal text
         if (showRenewal && renewalText.isNotEmpty()) {
             Spacer(modifier = GlanceModifier.height(2.dp))
             Text(
@@ -276,11 +261,15 @@ class RefreshAction : ActionCallback {
         glanceId: GlanceId,
         parameters: ActionParameters
     ) {
-        val quotaDataStore = QuotaWidget.getQuotaDataStore(context)
-        quotaDataStore.setLoading(true)
+        // Trigger widget update to show loading state
+        updateAppWidgetState(context, glanceId) {
+            it.apply {
+                this[IS_LOADING] = true
+            }
+        }
+        QuotaWidget().update(context, glanceId)
 
-        QuotaWidget().updateAll(context)
-
+        // Start the sync worker
         QuotaSyncWorker.runImmediately(context)
     }
 }
