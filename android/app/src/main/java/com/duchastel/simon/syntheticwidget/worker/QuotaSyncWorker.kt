@@ -3,7 +3,6 @@ package com.duchastel.simon.syntheticwidget.worker
 import android.content.Context
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.state.updateAppWidgetState
-import androidx.glance.appwidget.updateAll
 import androidx.hilt.work.HiltWorker
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
@@ -15,13 +14,7 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.duchastel.simon.syntheticwidget.data.NetworkClient
-import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.IS_LOADING
-import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.SUB_LIMIT
-import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.SUB_RENEWS_AT
-import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.SUB_REQUESTS
-import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.TOOL_LIMIT
-import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.TOOL_RENEWS_AT
-import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.TOOL_REQUESTS
+import com.duchastel.simon.syntheticwidget.data.WidgetRepository
 import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.WIDGET_ID
 import com.duchastel.simon.syntheticwidget.widget.QuotaWidget
 import dagger.assisted.Assisted
@@ -33,7 +26,8 @@ class QuotaSyncWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
     private val networkClient: NetworkClient,
-) : CoroutineWorker(context, params) {
+    private val widgetRepository: WidgetRepository,
+) : CoroutineWorker(applicationContext, params) {
 
     override suspend fun doWork(): Result {
         val appWidgetManager = GlanceAppWidgetManager(applicationContext)
@@ -54,13 +48,13 @@ class QuotaSyncWorker @AssistedInject constructor(
                         preferences[WIDGET_ID] == targetWidgetId
 
                     if (shouldUpdate) {
-                        preferences[IS_LOADING] = false
-                        preferences[SUB_LIMIT] = quotaResponse.subscription.limit
-                        preferences[SUB_REQUESTS] = quotaResponse.subscription.requests
-                        preferences[TOOL_LIMIT] = quotaResponse.freeToolCalls.limit
-                        preferences[TOOL_REQUESTS] = quotaResponse.freeToolCalls.requests
-                        preferences[SUB_RENEWS_AT] = quotaResponse.subscription.renewsAt ?: "Never!"
-                        preferences[TOOL_RENEWS_AT] = quotaResponse.freeToolCalls.renewsAt ?: "Never!"
+                        preferences[WidgetRepository.IS_LOADING] = false
+                        preferences[WidgetRepository.SUB_LIMIT] = quotaResponse.subscription.limit
+                        preferences[WidgetRepository.SUB_REQUESTS] = quotaResponse.subscription.requests
+                        preferences[WidgetRepository.TOOL_LIMIT] = quotaResponse.freeToolCalls.limit
+                        preferences[WidgetRepository.TOOL_REQUESTS] = quotaResponse.freeToolCalls.requests
+                        preferences[WidgetRepository.SUB_RENEWS_AT] = quotaResponse.subscription.renewsAt ?: "Never!"
+                        preferences[WidgetRepository.TOOL_RENEWS_AT] = quotaResponse.freeToolCalls.renewsAt ?: "Never!"
                     }
                 }
             }
@@ -73,7 +67,7 @@ class QuotaSyncWorker @AssistedInject constructor(
             // Set loading state to false even on error
             glanceIds.forEach { id ->
                 updateAppWidgetState(applicationContext, id) { preferences ->
-                    preferences[IS_LOADING] = false
+                    preferences[WidgetRepository.IS_LOADING] = false
                 }
             }
 
