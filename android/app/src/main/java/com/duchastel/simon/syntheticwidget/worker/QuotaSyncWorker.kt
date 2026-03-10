@@ -2,7 +2,6 @@ package com.duchastel.simon.syntheticwidget.worker
 
 import android.content.Context
 import androidx.glance.appwidget.GlanceAppWidgetManager
-import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.appwidget.updateAll
 import androidx.hilt.work.HiltWorker
@@ -47,30 +46,22 @@ class QuotaSyncWorker @AssistedInject constructor(
             // Fetch data from API
             val quotaResponse = networkClient.fetchQuotaData()
 
-            // Filter widgets if a target widget ID is specified
-            val quotaWidget = QuotaWidget()
-            val widgetsToUpdate = if (targetWidgetId.isNullOrEmpty()) {
-                // No widget ID specified - update all widgets
-                glanceIds
-            } else {
-                // Filter to only widgets with matching widget ID
-                glanceIds.filter { glanceId ->
-                    val preferences = quotaWidget.getAppWidgetState<androidx.datastore.preferences.core.Preferences>(applicationContext, glanceId)
-                    val widgetId = preferences[WIDGET_ID]
-                    widgetId == targetWidgetId
-                }
-            }
-
-            // Update state for filtered widgets
-            widgetsToUpdate.forEach { id ->
-                updateAppWidgetState(applicationContext, id) { preferences ->
-                    preferences[IS_LOADING] = false
-                    preferences[SUB_LIMIT] = quotaResponse.subscription.limit
-                    preferences[SUB_REQUESTS] = quotaResponse.subscription.requests
-                    preferences[TOOL_LIMIT] = quotaResponse.freeToolCalls.limit
-                    preferences[TOOL_REQUESTS] = quotaResponse.freeToolCalls.requests
-                    preferences[SUB_RENEWS_AT] = quotaResponse.subscription.renewsAt ?: "Never!"
-                    preferences[TOOL_RENEWS_AT] = quotaResponse.freeToolCalls.renewsAt ?: "Never!"
+            // Update all widgets, but only apply changes if widget ID matches (or no target specified)
+            glanceIds.forEach { glanceId ->
+                updateAppWidgetState(applicationContext, glanceId) { preferences ->
+                    // Only update if no target specified or widget ID matches
+                    val shouldUpdate = targetWidgetId.isNullOrEmpty() || 
+                        preferences[WIDGET_ID] == targetWidgetId
+                    
+                    if (shouldUpdate) {
+                        preferences[IS_LOADING] = false
+                        preferences[SUB_LIMIT] = quotaResponse.subscription.limit
+                        preferences[SUB_REQUESTS] = quotaResponse.subscription.requests
+                        preferences[TOOL_LIMIT] = quotaResponse.freeToolCalls.limit
+                        preferences[TOOL_REQUESTS] = quotaResponse.freeToolCalls.requests
+                        preferences[SUB_RENEWS_AT] = quotaResponse.subscription.renewsAt ?: "Never!"
+                        preferences[TOOL_RENEWS_AT] = quotaResponse.freeToolCalls.renewsAt ?: "Never!"
+                    }
                 }
             }
 
