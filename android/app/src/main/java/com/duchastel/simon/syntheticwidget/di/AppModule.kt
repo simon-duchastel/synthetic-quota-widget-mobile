@@ -8,7 +8,6 @@ import com.duchastel.simon.syntheticwidget.data.AuthDataStore
 import com.duchastel.simon.syntheticwidget.data.AuthRepository
 import com.duchastel.simon.syntheticwidget.data.AuthRepositoryImpl
 import com.duchastel.simon.syntheticwidget.data.NetworkClient
-import com.duchastel.simon.syntheticwidget.data.WidgetDataStore
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -60,13 +59,6 @@ object DataStoreModule {
         @ApplicationContext context: Context
     ): AuthDataStore {
         return AuthDataStore(context.authDataStore)
-    }
-
-    @Provides
-    fun provideWidgetDataStore(
-        @ApplicationContext context: Context
-    ): WidgetDataStore {
-        return WidgetDataStore(context.quotaDataStore)
     }
 }
 

@@ -1,7 +1,7 @@
 package com.duchastel.simon.syntheticwidget.worker
 
 import android.content.Context
-import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.appwidget.updateAll
 import androidx.hilt.work.HiltWorker
@@ -14,7 +14,13 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.duchastel.simon.syntheticwidget.data.NetworkClient
-import com.duchastel.simon.syntheticwidget.data.WidgetDataStore
+import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.IS_LOADING
+import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.SUB_LIMIT
+import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.SUB_RENEWS_AT
+import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.SUB_REQUESTS
+import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.TOOL_LIMIT
+import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.TOOL_RENEWS_AT
+import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.TOOL_REQUESTS
 import com.duchastel.simon.syntheticwidget.widget.QuotaWidget
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -25,33 +31,28 @@ class QuotaSyncWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
     private val networkClient: NetworkClient,
-    private val widgetDataStore: WidgetDataStore
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
+        val appWidgetManager = GlanceAppWidgetManager(applicationContext)
+        val widgetIds = appWidgetManager.getGlanceIds(QuotaWidget::class.java)
         return try {
             // Fetch data from API
             val quotaResponse = networkClient.fetchQuotaData()
 
-            // Save to DataStore
-            widgetDataStore.saveFromResponse(quotaResponse)
-
             // Set loading state to false in widget state
-            updateAppWidgetState(applicationContext, QuotaWidget()) { preferences ->
-                preferences[WidgetDataStore.IS_LOADING] = false
+            widgetIds.forEach { id ->
+                updateAppWidgetState(applicationContext, id) { preferences ->
+                    preferences[IS_LOADING] = false
+                    preferences[SUB_LIMIT] = quotaResponse.subscription.limit
+                    preferences[SUB_REQUESTS] = quotaResponse.subscription.requests
+                    preferences[TOOL_LIMIT] = quotaResponse.freeToolCalls.limit
+                    preferences[TOOL_REQUESTS] = quotaResponse.freeToolCalls.requests
+                    preferences[SUB_RENEWS_AT] = quotaResponse.subscription.renewsAt ?: "Never!"
+                    preferences[TOOL_RENEWS_AT] = quotaResponse.freeToolCalls.renewsAt ?: "Never!"
+                    preferences[IS_LOADING] = false
+                }
             }
-
-            // Sync all data to widget state
-            val widgetData = com.duchastel.simon.syntheticwidget.data.QuotaWidgetState(
-                subscriptionLimit = quotaResponse.subscription.limit,
-                subscriptionRequests = quotaResponse.subscription.requests,
-                toolLimit = quotaResponse.freeToolCalls.limit,
-                toolRequests = quotaResponse.freeToolCalls.requests,
-                subscriptionRenewsAt = quotaResponse.subscription.renewsAt,
-                toolRenewsAt = quotaResponse.freeToolCalls.renewsAt,
-                isLoading = false
-            )
-            widgetDataStore.saveToWidgetState(applicationContext, widgetData)
 
             // Trigger widget update
             QuotaWidget().updateAll(applicationContext)
@@ -59,8 +60,10 @@ class QuotaSyncWorker @AssistedInject constructor(
             Result.success()
         } catch (_: Exception) {
             // Set loading state to false even on error
-            updateAppWidgetState(applicationContext, QuotaWidget()) { preferences ->
-                preferences[WidgetDataStore.IS_LOADING] = false
+            widgetIds.forEach { id ->
+                updateAppWidgetState(applicationContext,  id) { preferences ->
+                    preferences[IS_LOADING] = false
+                }
             }
 
             // Trigger widget update to show error state
