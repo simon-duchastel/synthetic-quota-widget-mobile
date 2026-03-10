@@ -2,6 +2,7 @@ package com.duchastel.simon.syntheticwidget.worker
 
 import android.content.Context
 import androidx.glance.appwidget.updateAll
+import androidx.hilt.work.HiltWorker
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -13,23 +14,28 @@ import androidx.work.WorkerParameters
 import com.duchastel.simon.syntheticwidget.data.NetworkClient
 import com.duchastel.simon.syntheticwidget.data.WidgetDataStore
 import com.duchastel.simon.syntheticwidget.widget.QuotaWidget
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
 import java.util.concurrent.TimeUnit
 
-class QuotaSyncWorker(
-    context: Context,
-    params: WorkerParameters
+@HiltWorker
+class QuotaSyncWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
+    private val networkClient: NetworkClient,
+    private val widgetDataStore: WidgetDataStore
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
         return try {
             // Fetch data from API
-            val quotaResponse = NetworkClient.fetchQuotaData(applicationContext)
+            val quotaResponse = networkClient.fetchQuotaData()
 
             // Save to DataStore
-            WidgetDataStore.saveFromResponse(applicationContext, quotaResponse)
+            widgetDataStore.saveFromResponse(quotaResponse)
 
             // Set loading state to false
-            WidgetDataStore.setLoading(applicationContext, false)
+            widgetDataStore.setLoading(false)
 
             // Trigger widget update
             QuotaWidget().updateAll(applicationContext)
@@ -37,18 +43,18 @@ class QuotaSyncWorker(
             Result.success()
         } catch (_: Exception) {
             // Set loading state to false even on error
-            WidgetDataStore.setLoading(applicationContext, false)
-            
+            widgetDataStore.setLoading(false)
+
             // Trigger widget update to show error state
             QuotaWidget().updateAll(applicationContext)
-            
+
             Result.retry()
         }
     }
 
     companion object {
         private const val WORK_NAME = "quota_sync_worker"
-        
+
         fun schedule(context: Context) {
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)

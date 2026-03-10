@@ -1,20 +1,18 @@
 package com.duchastel.simon.syntheticwidget.data
 
-import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
-import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
 
-private val Context.widgetDataStore: DataStore<Preferences> by preferencesDataStore(name = "quota_preferences")
-
-object WidgetDataStore : DataStore<QuotaWidgetState> {
+class WidgetDataStore @Inject constructor(
+    private val dataStore: DataStore<Preferences>
+) {
     private val SUB_LIMIT = intPreferencesKey("sub_limit")
     private val SUB_REQUESTS = intPreferencesKey("sub_requests")
     private val TOOL_LIMIT = intPreferencesKey("tool_limit")
@@ -23,15 +21,8 @@ object WidgetDataStore : DataStore<QuotaWidgetState> {
     private val TOOL_RENEWS_AT = stringPreferencesKey("tool_renews_at")
     private val IS_LOADING = booleanPreferencesKey("is_loading")
 
-    override val data: Flow<QuotaWidgetState>
-        get() = throw IllegalStateException("Use getData(context) instead")
-
-    override suspend fun updateData(transform: suspend (QuotaWidgetState) -> QuotaWidgetState): QuotaWidgetState {
-        throw IllegalStateException("Use saveWidgetData(context, transform) instead")
-    }
-
-    suspend fun saveWidgetData(context: Context, widgetData: QuotaWidgetState): QuotaWidgetState {
-        context.widgetDataStore.edit { preferences ->
+    suspend fun saveWidgetData(widgetData: QuotaWidgetState): QuotaWidgetState {
+        dataStore.edit { preferences ->
             preferences[SUB_LIMIT] = widgetData.subscriptionLimit
             preferences[SUB_REQUESTS] = widgetData.subscriptionRequests
             preferences[TOOL_LIMIT] = widgetData.toolLimit
@@ -43,15 +34,9 @@ object WidgetDataStore : DataStore<QuotaWidgetState> {
         return widgetData
     }
 
-    suspend fun saveWidgetData(context: Context, transform: suspend (QuotaWidgetState) -> QuotaWidgetState): QuotaWidgetState {
-        val currentData = getWidgetData(context)
-        val newData = transform(currentData)
-        return saveWidgetData(context, newData)
-    }
-
-    suspend fun getWidgetData(context: Context): QuotaWidgetState {
-        return context.widgetDataStore.data.map { preferences ->
-            QuotaWidgetState(
+    suspend fun saveWidgetData(transform: suspend (QuotaWidgetState) -> QuotaWidgetState): QuotaWidgetState {
+        return dataStore.updateData { preferences ->
+            val currentData = QuotaWidgetState(
                 subscriptionLimit = preferences[SUB_LIMIT] ?: 135,
                 subscriptionRequests = preferences[SUB_REQUESTS] ?: 0,
                 toolLimit = preferences[TOOL_LIMIT] ?: 500,
@@ -60,11 +45,22 @@ object WidgetDataStore : DataStore<QuotaWidgetState> {
                 toolRenewsAt = preferences[TOOL_RENEWS_AT],
                 isLoading = preferences[IS_LOADING] ?: false
             )
-        }.first()
+            transform(currentData)
+        }.let {
+            QuotaWidgetState(
+                subscriptionLimit = it[SUB_LIMIT] ?: 135,
+                subscriptionRequests = it[SUB_REQUESTS] ?: 0,
+                toolLimit = it[TOOL_LIMIT] ?: 500,
+                toolRequests = it[TOOL_REQUESTS] ?: 34,
+                subscriptionRenewsAt = it[SUB_RENEWS_AT],
+                toolRenewsAt = it[TOOL_RENEWS_AT],
+                isLoading = it[IS_LOADING] ?: false
+            )
+        }
     }
 
-    fun getWidgetDataFlow(context: Context): Flow<QuotaWidgetState> {
-        return context.widgetDataStore.data.map { preferences ->
+    fun getWidgetData(): Flow<QuotaWidgetState> {
+        return dataStore.data.map { preferences ->
             QuotaWidgetState(
                 subscriptionLimit = preferences[SUB_LIMIT] ?: 135,
                 subscriptionRequests = preferences[SUB_REQUESTS] ?: 0,
@@ -77,7 +73,7 @@ object WidgetDataStore : DataStore<QuotaWidgetState> {
         }
     }
 
-    suspend fun saveFromResponse(context: Context, response: QuotaResponse) {
+    suspend fun saveFromResponse(response: QuotaResponse) {
         val widgetData = QuotaWidgetState(
             subscriptionLimit = response.subscription.limit,
             subscriptionRequests = response.subscription.requests,
@@ -87,16 +83,17 @@ object WidgetDataStore : DataStore<QuotaWidgetState> {
             toolRenewsAt = response.freeToolCalls.renewsAt,
             isLoading = false
         )
-        saveWidgetData(context, widgetData)
+        saveWidgetData(widgetData)
     }
 
-    suspend fun setLoading(context: Context, loading: Boolean) {
-        val currentData = getWidgetData(context)
-        saveWidgetData(context, currentData.copy(isLoading = loading))
+    suspend fun setLoading(loading: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[IS_LOADING] = loading
+        }
     }
 
-    fun isLoading(context: Context): Flow<Boolean> {
-        return context.widgetDataStore.data.map { preferences ->
+    fun isLoading(): Flow<Boolean> {
+        return dataStore.data.map { preferences ->
             preferences[IS_LOADING] ?: false
         }
     }

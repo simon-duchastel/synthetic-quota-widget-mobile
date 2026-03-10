@@ -24,12 +24,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.duchastel.simon.syntheticwidget.ui.theme.SyntheticWidgetTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     
-    private val viewModel: MainViewModel by viewModels {
-        MainViewModel.Factory(applicationContext)
-    }
+    private val viewModel: MainViewModel by viewModels()
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

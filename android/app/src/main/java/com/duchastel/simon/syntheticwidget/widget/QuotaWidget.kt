@@ -47,15 +47,25 @@ import com.duchastel.simon.syntheticwidget.R
 import com.duchastel.simon.syntheticwidget.data.QuotaWidgetState
 import com.duchastel.simon.syntheticwidget.data.WidgetDataStore
 import com.duchastel.simon.syntheticwidget.worker.QuotaSyncWorker
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import java.io.File
 
 class QuotaWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val widgetDataStore = getWidgetDataStore(context)
+        val isLoading = widgetDataStore.isLoading().first()
+
         provideContent {
             GlanceTheme {
                 QuotaWidgetContent(
-                    widgetData = currentState()
+                    widgetData = currentState(),
+                    isLoading = isLoading
                 )
             }
         }
@@ -67,18 +77,43 @@ class QuotaWidget : GlanceAppWidget() {
                 context: Context,
                 fileKey: String
             ): DataStore<QuotaWidgetState> {
-                return WidgetDataStore
+                val widgetDataStore = getWidgetDataStore(context)
+                return object : DataStore<QuotaWidgetState> {
+                    override val data: Flow<QuotaWidgetState>
+                        get() = widgetDataStore.getWidgetData()
+
+                    override suspend fun updateData(transform: suspend (QuotaWidgetState) -> QuotaWidgetState): QuotaWidgetState {
+                        return widgetDataStore.saveWidgetData(transform)
+                    }
+                }
             }
 
             override fun getLocation(context: Context, fileKey: String): File {
                 return context.preferencesDataStoreFile("quota_preferences")
             }
         }
+
+    companion object {
+        fun getWidgetDataStore(context: Context): WidgetDataStore {
+            val entryPoint = EntryPointAccessors.fromApplication(
+                context.applicationContext,
+                QuotaWidgetEntryPoint::class.java
+            )
+            return entryPoint.widgetDataStore()
+        }
+    }
+}
+
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface QuotaWidgetEntryPoint {
+    fun widgetDataStore(): WidgetDataStore
 }
 
 @Composable
 fun QuotaWidgetContent(
-    widgetData: QuotaWidgetState
+    widgetData: QuotaWidgetState,
+    isLoading: Boolean = false
 ) {
     Box(
         modifier = GlanceModifier
@@ -124,7 +159,7 @@ fun QuotaWidgetContent(
                 modifier = GlanceModifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.Horizontal.End
             ) {
-                if (widgetData.isLoading) {
+                if (isLoading) {
                     // Show loading text
                     Text(
                         text = "Loading...",
@@ -191,9 +226,9 @@ fun QuotaBar(
                     )
                 )
             )
-            
+
             Spacer(modifier = GlanceModifier.width(8.dp))
-            
+
             // Progress bar container
             Box(
                 modifier = GlanceModifier
@@ -210,9 +245,9 @@ fun QuotaBar(
                         .cornerRadius(4.dp)
                 ) {}
             }
-            
+
             Spacer(modifier = GlanceModifier.width(8.dp))
-            
+
             // Count display with fixed width for alignment
             Text(
                 text = "$used/$limit",
@@ -227,7 +262,7 @@ fun QuotaBar(
                 )
             )
         }
-        
+
         // Renewal text
         if (showRenewal && renewalText.isNotEmpty()) {
             Spacer(modifier = GlanceModifier.height(2.dp))
@@ -251,8 +286,10 @@ class RefreshAction : ActionCallback {
         glanceId: GlanceId,
         parameters: ActionParameters
     ) {
+        val widgetDataStore = QuotaWidget.getWidgetDataStore(context)
+
         // Set loading state to true
-        WidgetDataStore.setLoading(context, true)
+        widgetDataStore.setLoading(true)
 
         // Trigger widget update to show loading state
         QuotaWidget().updateAll(context)
