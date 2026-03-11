@@ -1,13 +1,14 @@
 package com.duchastel.simon.syntheticwidget
 
 import android.content.Context
+import androidx.glance.GlanceId
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.duchastel.simon.syntheticwidget.data.AuthRepository
 import com.duchastel.simon.syntheticwidget.data.QuotaWidgetRepository
-import com.duchastel.simon.syntheticwidget.data.QuotaWidgetState
 import com.duchastel.simon.syntheticwidget.widget.QuotaWidget
+import com.duchastel.simon.syntheticwidget.widget.QuotaWidgetState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +18,8 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class WidgetInfo(
-    val glanceId: String,
+    val glanceId: GlanceId,
+    val appWidgetId: Int,
     val state: QuotaWidgetState
 )
 
@@ -25,7 +27,7 @@ data class WidgetInfo(
 class MainViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val quotaWidgetRepository: QuotaWidgetRepository,
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _maskedApiKey = MutableStateFlow("")
@@ -49,12 +51,21 @@ class MainViewModel @Inject constructor(
             val glanceIds = glanceManager.getGlanceIds(QuotaWidget::class.java)
             val widgetList = glanceIds.map { glanceId ->
                 val state = quotaWidgetRepository.getWidgetState(glanceId)
+                val appWidgetId = glanceManager.getAppWidgetId(glanceId)
                 WidgetInfo(
-                    glanceId = glanceId.toString(),
+                    glanceId = glanceId,
+                    appWidgetId = appWidgetId,
                     state = state
                 )
             }
             _widgets.value = widgetList
+        }
+    }
+
+    fun refreshWidget(glanceId: GlanceId) {
+        viewModelScope.launch {
+            quotaWidgetRepository.refreshData(glanceId)
+            loadWidgets()
         }
     }
 

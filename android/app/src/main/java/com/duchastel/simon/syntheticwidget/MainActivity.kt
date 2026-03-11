@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -36,6 +37,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.duchastel.simon.syntheticwidget.ui.theme.SyntheticWidgetTheme
 import com.duchastel.simon.syntheticwidget.ui.widget.QuotaWidgetScreen
 import dagger.hilt.android.AndroidEntryPoint
@@ -50,15 +58,60 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             SyntheticWidgetTheme {
-                MainScreen(viewModel = viewModel)
+                SyntheticWidgetApp(viewModel = viewModel)
             }
+        }
+    }
+}
+
+sealed class Screen(val route: String) {
+    data object WidgetList : Screen("widgets")
+    data object Settings : Screen("widgets/{widgetId}/settings") {
+        fun createRoute(widgetId: Int) = "widgets/$widgetId/settings"
+    }
+}
+
+@Composable
+fun SyntheticWidgetApp(
+    viewModel: MainViewModel = hiltViewModel(),
+    navController: NavHostController = rememberNavController()
+) {
+    NavHost(
+        navController = navController,
+        startDestination = Screen.WidgetList.route
+    ) {
+        composable(Screen.WidgetList.route) {
+            WidgetListScreen(
+                viewModel = viewModel,
+                onNavigateToSettings = { widgetId ->
+                    navController.navigate(Screen.Settings.createRoute(widgetId))
+                }
+            )
+        }
+        composable(
+            route = Screen.Settings.route,
+            arguments = listOf(
+                navArgument("widgetId") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val widgetId = backStackEntry.arguments?.getInt("widgetId") ?: return@composable
+            SettingsScreen(
+                viewModel = viewModel,
+                widgetId = widgetId,
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(viewModel: MainViewModel) {
+fun WidgetListScreen(
+    viewModel: MainViewModel,
+    onNavigateToSettings: (Int) -> Unit
+) {
     val maskedApiKey by viewModel.maskedApiKey.collectAsState()
     val widgets by viewModel.widgets.collectAsState()
     var apiKeyInput by remember { mutableStateOf("") }
@@ -126,9 +179,84 @@ fun MainScreen(viewModel: MainViewModel) {
                 WidgetListItem(
                     maskedApiKey = maskedApiKey,
                     widgetInfo = widgetInfo,
-                    onSettingsClick = { TODO() }
+                    onRefreshClick = { viewModel.refreshWidget(widgetInfo.glanceId) },
+                    onSettingsClick = { onNavigateToSettings(widgetInfo.appWidgetId) }
                 )
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SettingsScreen(
+    viewModel: MainViewModel,
+    widgetId: Int,
+    onNavigateBack: () -> Unit
+) {
+    val widgets by viewModel.widgets.collectAsState()
+    val widgetInfo = widgets.find { widget ->
+        widget.appWidgetId == widgetId
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Widget Settings") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp)
+        ) {
+            // Widget preview at the top
+            widgetInfo?.let { info ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        QuotaWidgetScreen(
+                            quotaWidgetState = info.state,
+                            onRefreshClick = { viewModel.refreshWidget(info.glanceId) }
+                        )
+                    }
+                }
+            }
+
+            // Settings content
+            Text(
+                text = "Settings",
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            // Lorem ipsum placeholder text
+            Text(
+                text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            Text(
+                text = "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+                style = MaterialTheme.typography.bodyMedium
+            )
         }
     }
 }
@@ -137,6 +265,7 @@ fun MainScreen(viewModel: MainViewModel) {
 fun WidgetListItem(
     maskedApiKey: String,
     widgetInfo: WidgetInfo,
+    onRefreshClick: () -> Unit,
     onSettingsClick: () -> Unit
 ) {
     Row(
@@ -155,7 +284,7 @@ fun WidgetListItem(
             ) {
                 QuotaWidgetScreen(
                     quotaWidgetState = widgetInfo.state,
-                    onRefreshClick = {}
+                    onRefreshClick = onRefreshClick
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
