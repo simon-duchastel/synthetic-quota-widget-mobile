@@ -29,7 +29,12 @@ data class QuotaWidgetState(
     val toolRequests: Int = 34,
     val subscriptionRenewsAt: String? = null,
     val toolRenewsAt: String? = null,
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    /**
+     * A UUID generated and stored by us for each widget instance.
+     * This is different from the GlanceId (which is system-assigned).
+     */
+    val widgetId: String = ""
 ) {
     val subscriptionRemaining: Int
         get() = subscriptionLimit - subscriptionRequests
