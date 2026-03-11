@@ -13,15 +13,16 @@ import androidx.glance.GlanceTheme
 import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.LocalSize
+import androidx.glance.ExperimentalGlanceApi
 import androidx.glance.action.ActionParameters
 import androidx.glance.action.clickable
+import androidx.glance.appwidget.AdaptersGlanceId
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
-import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.appwidget.updateAll
 import androidx.glance.background
@@ -51,23 +52,11 @@ import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.SUB_R
 import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.TOOL_LIMIT
 import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.TOOL_RENEWS_AT
 import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.TOOL_REQUESTS
-import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.WIDGET_ID
 import com.duchastel.simon.syntheticwidget.worker.QuotaSyncWorker
-import java.util.UUID
 
 class QuotaWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        // Generate and store widget ID if not already present
-        val preferences = getAppWidgetState<androidx.datastore.preferences.core.Preferences>(context, id)
-        val currentWidgetId = preferences[WIDGET_ID]
-        if (currentWidgetId.isNullOrEmpty()) {
-            val newWidgetId = UUID.randomUUID().toString()
-            updateAppWidgetState(context, id) { prefs ->
-                prefs[WIDGET_ID] = newWidgetId
-            }
-        }
-
         provideContent {
             GlanceTheme {
                 QuotaWidgetContent(
@@ -79,7 +68,6 @@ class QuotaWidget : GlanceAppWidget() {
                         subscriptionRenewsAt = currentState(SUB_RENEWS_AT),
                         toolRenewsAt = currentState(TOOL_RENEWS_AT),
                         isLoading = currentState(IS_LOADING) ?: false,
-                        widgetId = currentState(WIDGET_ID) ?: "",
                     )
                 )
             }
@@ -269,15 +257,18 @@ fun QuotaBar(
     }
 }
 
+@OptIn(ExperimentalGlanceApi::class)
 class RefreshAction : ActionCallback {
     override suspend fun onAction(
         context: Context,
         glanceId: GlanceId,
         parameters: ActionParameters
     ) {
-        // Get the widget ID from the current state
-        val preferences = QuotaWidget().getAppWidgetState<androidx.datastore.preferences.core.Preferences>(context, glanceId)
-        val widgetId = preferences[WIDGET_ID] ?: ""
+        // Extract the appWidgetId from the GlanceId and serialize it for the worker
+        val appWidgetId = when (glanceId) {
+            is AdaptersGlanceId -> glanceId.appWidgetId
+            else -> error("Unsupported GlanceId type: $glanceId")
+        }
         
         // Trigger widget update to show loading state
         updateAppWidgetState(context, glanceId) {
@@ -287,8 +278,8 @@ class RefreshAction : ActionCallback {
         }
         QuotaWidget().update(context, glanceId)
 
-        // Start the sync worker with the widget ID
-        QuotaSyncWorker.runImmediately(context, widgetId)
+        // Start the sync worker with the appWidgetId
+        QuotaSyncWorker.runImmediately(context, appWidgetId)
     }
 }
 
