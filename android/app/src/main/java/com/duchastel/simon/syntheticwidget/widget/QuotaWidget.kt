@@ -98,7 +98,9 @@ fun QuotaWidgetContent(quotaWidgetState: QuotaWidgetState) {
                 progress = subscriptionProgress,
                 barColor = Color(0xFF6366F1),
                 backgroundColor = Color(0xFFA5B4FC),
-                renewalText = formatRenewalTime(quotaWidgetState.subscriptionRenewsAt)
+                renewalText = remember(quotaWidgetState.subscriptionRenewsAt) {
+                    formatRenewalTime(quotaWidgetState.subscriptionRenewsAt)
+                }
             )
 
             Spacer(modifier = GlanceModifier.height(8.dp))
@@ -111,7 +113,9 @@ fun QuotaWidgetContent(quotaWidgetState: QuotaWidgetState) {
                 progress = toolProgress,
                 barColor = Color(0xFF10B981),
                 backgroundColor = Color(0xFFA7F3D0),
-                renewalText = formatRenewalTime(quotaWidgetState.toolRenewsAt)
+                renewalText = remember(quotaWidgetState.toolRenewsAt) {
+                    formatRenewalTime(quotaWidgetState.toolRenewsAt)
+                }
             )
 
             Spacer(modifier = GlanceModifier.height(4.dp))
