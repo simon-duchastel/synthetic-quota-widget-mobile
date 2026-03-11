@@ -44,6 +44,7 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.duchastel.simon.syntheticwidget.R
 import com.duchastel.simon.syntheticwidget.data.toQuotaWidgetState
+import com.duchastel.simon.syntheticwidget.utils.formatRenewalTime
 import com.duchastel.simon.syntheticwidget.worker.QuotaSyncWorker
 
 class QuotaWidget : GlanceAppWidget() {
@@ -97,8 +98,13 @@ fun QuotaWidgetContent(quotaWidgetState: QuotaWidgetState) {
                 progress = subscriptionProgress,
                 barColor = if (isInitialized) Color(0xFF6366F1) else greyBarColor,
                 backgroundColor = if (isInitialized) Color(0xFFA5B4FC) else greyBackgroundColor,
-                showRenewal = isInitialized && quotaData.subscriptionRenewsAt != null,
-                renewalText = if (isInitialized) quotaData.subscriptionRenewsAt?.let { "Renews at $it" } ?: "" else ""
+                renewalText = if (isInitialized) {
+                    remember(quotaWidgetState.quotaData.subscriptionRenewsAt) {
+                        formatRenewalTime(quotaWidgetState.quotaData.subscriptionRenewsAt)
+                    }
+                } else {
+                    ""
+                }
             )
 
             Spacer(modifier = GlanceModifier.height(8.dp))
@@ -111,8 +117,13 @@ fun QuotaWidgetContent(quotaWidgetState: QuotaWidgetState) {
                 progress = toolProgress,
                 barColor = if (isInitialized) Color(0xFF10B981) else greyBarColor,
                 backgroundColor = if (isInitialized) Color(0xFFA7F3D0) else greyBackgroundColor,
-                showRenewal = isInitialized && quotaData.toolRenewsAt != null,
-                renewalText = if (isInitialized) quotaData.toolRenewsAt?.let { "Renews at $it" } ?: "" else ""
+                renewalText = if (isInitialized) {
+                    remember(quotaWidgetState.quotaData.toolRenewsAt) {
+                        formatRenewalTime(quotaWidgetState.quotaData.toolRenewsAt)
+                    }
+                } else {
+                    ""
+                }
             )
 
             Spacer(modifier = GlanceModifier.height(4.dp))
@@ -189,8 +200,7 @@ fun QuotaBar(
     progress: Float,
     barColor: Color,
     backgroundColor: Color,
-    showRenewal: Boolean = false,
-    renewalText: String = ""
+    renewalText: String? = null
 ) {
     val width = LocalSize.current.width
     val progressBarWidth = remember(width, progress) { width * progress }
@@ -262,7 +272,7 @@ fun QuotaBar(
         }
 
         // Renewal text
-        if (showRenewal && renewalText.isNotEmpty()) {
+        if (renewalText != null) {
             Spacer(modifier = GlanceModifier.height(2.dp))
             Text(
                 text = renewalText,
