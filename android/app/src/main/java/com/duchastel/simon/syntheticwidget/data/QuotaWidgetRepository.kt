@@ -6,9 +6,9 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.glance.GlanceId
-import androidx.glance.appwidget.state.PreferencesGlanceStateDefinition
 import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.appwidget.state.updateAppWidgetState
+import androidx.glance.state.PreferencesGlanceStateDefinition
 import com.duchastel.simon.syntheticwidget.widget.QuotaData
 import com.duchastel.simon.syntheticwidget.widget.QuotaWidget
 import com.duchastel.simon.syntheticwidget.widget.QuotaWidgetState

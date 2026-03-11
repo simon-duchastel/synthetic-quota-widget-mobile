@@ -7,8 +7,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.duchastel.simon.syntheticwidget.data.AuthRepository
 import com.duchastel.simon.syntheticwidget.data.QuotaWidgetRepository
-import com.duchastel.simon.syntheticwidget.data.QuotaWidgetState
 import com.duchastel.simon.syntheticwidget.widget.QuotaWidget
+import com.duchastel.simon.syntheticwidget.widget.QuotaWidgetState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,7 +26,7 @@ data class WidgetInfo(
 class MainViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val quotaWidgetRepository: QuotaWidgetRepository,
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _maskedApiKey = MutableStateFlow("")
