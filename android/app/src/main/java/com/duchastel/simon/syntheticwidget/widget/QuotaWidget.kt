@@ -67,7 +67,7 @@ class QuotaWidget : GlanceAppWidget() {
                 prefs[WIDGET_ID] = newWidgetId
             }
         }
-        
+
         provideContent {
             GlanceTheme {
                 QuotaWidgetContent(

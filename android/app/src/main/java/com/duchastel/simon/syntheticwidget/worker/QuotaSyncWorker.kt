@@ -52,7 +52,7 @@ class QuotaSyncWorker @AssistedInject constructor(
                     // Only update if no target specified or widget ID matches
                     val shouldUpdate = targetWidgetId.isNullOrEmpty() || 
                         preferences[WIDGET_ID] == targetWidgetId
-                    
+
                     if (shouldUpdate) {
                         preferences[IS_LOADING] = false
                         preferences[SUB_LIMIT] = quotaResponse.subscription.limit
