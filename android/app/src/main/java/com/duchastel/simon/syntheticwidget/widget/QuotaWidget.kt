@@ -44,8 +44,8 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.duchastel.simon.syntheticwidget.R
 import com.duchastel.simon.syntheticwidget.data.QuotaWidgetState
-import com.duchastel.simon.syntheticwidget.data.formatRenewalTime
 import com.duchastel.simon.syntheticwidget.data.toQuotaWidgetState
+import com.duchastel.simon.syntheticwidget.utils.formatRenewalTime
 import com.duchastel.simon.syntheticwidget.worker.QuotaSyncWorker
 
 class QuotaWidget : GlanceAppWidget() {

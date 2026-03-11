@@ -1,0 +1,26 @@
+package com.duchastel.simon.syntheticwidget.utils
+
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeParseException
+
+fun formatRenewalTime(isoTimestamp: String?): String? {
+    if (isoTimestamp == null || isoTimestamp == "Never!") return null
+
+    return try {
+        val instant = Instant.parse(isoTimestamp)
+        val zonedDateTime = instant.atZone(ZoneId.systemDefault())
+        val hour = zonedDateTime.hour
+        val minute = zonedDateTime.minute
+        val amPm = if (hour < 12) "am" else "pm"
+        val displayHour = when {
+            hour == 0 -> 12
+            hour > 12 -> hour - 12
+            else -> hour
+        }
+        val minuteStr = if (minute < 10) "0$minute" else "$minute"
+        "Renews at $displayHour:$minuteStr$amPm"
+    } catch (_: DateTimeParseException) {
+        null
+    }
+}

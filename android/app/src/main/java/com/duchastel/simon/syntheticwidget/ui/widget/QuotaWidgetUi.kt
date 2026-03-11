@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.duchastel.simon.syntheticwidget.R
 import com.duchastel.simon.syntheticwidget.data.QuotaWidgetState
-import com.duchastel.simon.syntheticwidget.data.formatRenewalTime
+import com.duchastel.simon.syntheticwidget.utils.formatRenewalTime
 
 @Composable
 fun QuotaWidgetScreen(
