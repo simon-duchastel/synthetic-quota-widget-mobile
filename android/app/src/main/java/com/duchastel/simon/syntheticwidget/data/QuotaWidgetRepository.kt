@@ -18,7 +18,11 @@ class QuotaWidgetRepository @Inject constructor(
     private val networkClient: NetworkClient,
 ) {
     suspend fun getWidgetState(glanceWidgetId: GlanceId): QuotaWidgetState {
-        return getAppWidgetState(context, glanceWidgetId).toQuotaWidgetState()
+        return getAppWidgetState(
+            context = context,
+            definition = PreferencesGlanceStateDefinition,
+            glanceId = glanceWidgetId
+        ).toQuotaWidgetState()
     }
 
     suspend fun refreshData(glanceWidgetId: GlanceId): Boolean {
