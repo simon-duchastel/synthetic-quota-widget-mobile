@@ -2,7 +2,6 @@ package com.duchastel.simon.syntheticwidget.worker
 
 import android.content.Context
 import androidx.glance.ExperimentalGlanceApi
-import androidx.glance.appwidget.AdaptersGlanceId
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.appwidget.updateAll
@@ -35,69 +34,42 @@ class QuotaSyncWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
     private val networkClient: NetworkClient,
-) : CoroutineWorker(applicationContext, params) {
+) : CoroutineWorker(context, params) {
+    private val appWidgetManager by lazy { GlanceAppWidgetManager(applicationContext) }
 
     override suspend fun doWork(): Result {
-        val appWidgetManager = GlanceAppWidgetManager(applicationContext)
-        val glanceIds = appWidgetManager.getGlanceIds(QuotaWidget::class.java)
-        
-        // Get the target appWidgetId from input data (if specified)
-        // -1 means no specific widget targeted, update all
+        // Get the target appWidgetId from input data
         val targetAppWidgetId = inputData.getInt(KEY_APP_WIDGET_ID, -1)
+        if (targetAppWidgetId == -1) return Result.failure()
         
         return try {
             // Fetch data from API
             val quotaResponse = networkClient.fetchQuotaData()
 
-            // Update widgets - either specific one or all
-            if (targetAppWidgetId != -1) {
-                // Update specific widget by converting appWidgetId back to GlanceId
-                val targetGlanceId = AdaptersGlanceId(targetAppWidgetId)
-                updateAppWidgetState(applicationContext, targetGlanceId) { preferences ->
-                    preferences[IS_LOADING] = false
-                    preferences[SUB_LIMIT] = quotaResponse.subscription.limit
-                    preferences[SUB_REQUESTS] = quotaResponse.subscription.requests
-                    preferences[TOOL_LIMIT] = quotaResponse.freeToolCalls.limit
-                    preferences[TOOL_REQUESTS] = quotaResponse.freeToolCalls.requests
-                    preferences[SUB_RENEWS_AT] = quotaResponse.subscription.renewsAt ?: "Never!"
-                    preferences[TOOL_RENEWS_AT] = quotaResponse.freeToolCalls.renewsAt ?: "Never!"
-                }
-            } else {
-                // Update all widgets
-                glanceIds.forEach { glanceId ->
-                    updateAppWidgetState(applicationContext, glanceId) { preferences ->
-                        preferences[IS_LOADING] = false
-                        preferences[SUB_LIMIT] = quotaResponse.subscription.limit
-                        preferences[SUB_REQUESTS] = quotaResponse.subscription.requests
-                        preferences[TOOL_LIMIT] = quotaResponse.freeToolCalls.limit
-                        preferences[TOOL_REQUESTS] = quotaResponse.freeToolCalls.requests
-                        preferences[SUB_RENEWS_AT] = quotaResponse.subscription.renewsAt ?: "Never!"
-                        preferences[TOOL_RENEWS_AT] = quotaResponse.freeToolCalls.renewsAt ?: "Never!"
-                    }
-                }
+            val targetGlanceId = appWidgetManager.getGlanceIdBy(targetAppWidgetId)
+            updateAppWidgetState(applicationContext, targetGlanceId) { preferences ->
+                preferences[IS_LOADING] = false
+                preferences[SUB_LIMIT] = quotaResponse.subscription.limit
+                preferences[SUB_REQUESTS] = quotaResponse.subscription.requests
+                preferences[TOOL_LIMIT] = quotaResponse.freeToolCalls.limit
+                preferences[TOOL_REQUESTS] = quotaResponse.freeToolCalls.requests
+                preferences[SUB_RENEWS_AT] = quotaResponse.subscription.renewsAt ?: "Never!"
+                preferences[TOOL_RENEWS_AT] = quotaResponse.freeToolCalls.renewsAt ?: "Never!"
             }
 
             // Trigger widget update
-            QuotaWidget().updateAll(applicationContext)
+            QuotaWidget().update(applicationContext, targetGlanceId)
 
             Result.success()
         } catch (_: Exception) {
-            // Set loading state to false even on error
-            if (targetAppWidgetId != -1) {
-                val targetGlanceId = AdaptersGlanceId(targetAppWidgetId)
-                updateAppWidgetState(applicationContext, targetGlanceId) { preferences ->
-                    preferences[IS_LOADING] = false
-                }
-            } else {
-                glanceIds.forEach { id ->
-                    updateAppWidgetState(applicationContext, id) { preferences ->
-                        preferences[IS_LOADING] = false
-                    }
-                }
+            // Set loading state to false
+            val targetGlanceId = appWidgetManager.getGlanceIdBy(targetAppWidgetId)
+            updateAppWidgetState(applicationContext, targetGlanceId) { preferences ->
+                preferences[IS_LOADING] = false
             }
 
             // Trigger widget update to show error state
-            QuotaWidget().updateAll(applicationContext)
+            QuotaWidget().update(applicationContext, targetGlanceId)
 
             Result.retry()
         }

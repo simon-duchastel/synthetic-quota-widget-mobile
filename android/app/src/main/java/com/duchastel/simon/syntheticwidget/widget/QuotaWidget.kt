@@ -7,24 +7,23 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.ColorFilter
+import androidx.glance.ExperimentalGlanceApi
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.LocalSize
-import androidx.glance.ExperimentalGlanceApi
 import androidx.glance.action.ActionParameters
 import androidx.glance.action.clickable
-import androidx.glance.appwidget.AdaptersGlanceId
 import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.appwidget.state.updateAppWidgetState
-import androidx.glance.appwidget.updateAll
 import androidx.glance.background
 import androidx.glance.color.ColorProvider
 import androidx.glance.currentState
@@ -264,12 +263,6 @@ class RefreshAction : ActionCallback {
         glanceId: GlanceId,
         parameters: ActionParameters
     ) {
-        // Extract the appWidgetId from the GlanceId and serialize it for the worker
-        val appWidgetId = when (glanceId) {
-            is AdaptersGlanceId -> glanceId.appWidgetId
-            else -> error("Unsupported GlanceId type: $glanceId")
-        }
-        
         // Trigger widget update to show loading state
         updateAppWidgetState(context, glanceId) {
             it.apply {
@@ -279,6 +272,8 @@ class RefreshAction : ActionCallback {
         QuotaWidget().update(context, glanceId)
 
         // Start the sync worker with the appWidgetId
+        val appWidgetManager = GlanceAppWidgetManager(context)
+        val appWidgetId = appWidgetManager.getAppWidgetId(glanceId)
         QuotaSyncWorker.runImmediately(context, appWidgetId)
     }
 }
