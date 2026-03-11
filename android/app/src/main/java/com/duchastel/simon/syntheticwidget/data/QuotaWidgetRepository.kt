@@ -9,7 +9,9 @@ import androidx.glance.GlanceId
 import androidx.glance.appwidget.state.PreferencesGlanceStateDefinition
 import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.appwidget.state.updateAppWidgetState
+import com.duchastel.simon.syntheticwidget.widget.QuotaData
 import com.duchastel.simon.syntheticwidget.widget.QuotaWidget
+import com.duchastel.simon.syntheticwidget.widget.QuotaWidgetState
 import dagger.hilt.android.qualifiers.ApplicationContext
 import okio.IOException
 import javax.inject.Inject
@@ -40,8 +42,16 @@ class QuotaWidgetRepository @Inject constructor(
                 preferences[SUB_REQUESTS] = quotaResponse.subscription.requests
                 preferences[TOOL_LIMIT] = quotaResponse.freeToolCalls.limit
                 preferences[TOOL_REQUESTS] = quotaResponse.freeToolCalls.requests
-                preferences[SUB_RENEWS_AT] = quotaResponse.subscription.renewsAt ?: "Never!"
-                preferences[TOOL_RENEWS_AT] = quotaResponse.freeToolCalls.renewsAt ?: "Never!"
+                if (quotaResponse.subscription.renewsAt != null) {
+                    preferences[SUB_RENEWS_AT] = quotaResponse.subscription.renewsAt
+                } else {
+                    preferences -= SUB_RENEWS_AT
+                }
+                if (quotaResponse.freeToolCalls.renewsAt != null) {
+                    preferences[TOOL_RENEWS_AT] = quotaResponse.freeToolCalls.renewsAt
+                } else {
+                    preferences -= TOOL_RENEWS_AT
+                }
             }
             QuotaWidget().update(context, glanceWidgetId)
 
@@ -69,13 +79,25 @@ private val TOOL_RENEWS_AT = stringPreferencesKey("tool_renews_at")
 private val IS_LOADING = booleanPreferencesKey("is_loading")
 
 fun Preferences.toQuotaWidgetState(): QuotaWidgetState {
+    // Required fields - if any are missing, we don't have valid quota data
+    val subLimit = this[SUB_LIMIT]
+    val subRequests = this[SUB_REQUESTS]
+    val toolLimit = this[TOOL_LIMIT]
+    val toolRequests = this[TOOL_REQUESTS]
+
+    val quotaData = if (subLimit != null && subRequests != null && toolLimit != null && toolRequests != null) {
+        QuotaData(
+            subscriptionLimit = subLimit,
+            subscriptionRequests = subRequests,
+            toolLimit = toolLimit,
+            toolRequests = toolRequests,
+            subscriptionRenewsAt = this[SUB_RENEWS_AT],
+            toolRenewsAt = this[TOOL_RENEWS_AT],
+        )
+    } else null
+
     return QuotaWidgetState(
-        subscriptionLimit = this[SUB_LIMIT] ?: 135,
-        subscriptionRequests = this[SUB_REQUESTS] ?: 0,
-        toolLimit = this[TOOL_LIMIT] ?: 500,
-        toolRequests = this[TOOL_REQUESTS] ?: 34,
-        subscriptionRenewsAt = this[SUB_RENEWS_AT],
-        toolRenewsAt = this[TOOL_RENEWS_AT],
+        quotaData = quotaData,
         isLoading = this[IS_LOADING] ?: false,
     )
 }
