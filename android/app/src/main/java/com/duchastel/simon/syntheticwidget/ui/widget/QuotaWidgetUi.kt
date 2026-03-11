@@ -29,7 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.duchastel.simon.syntheticwidget.R
-import com.duchastel.simon.syntheticwidget.data.QuotaWidgetState
+import com.duchastel.simon.syntheticwidget.widget.QuotaWidgetState
 
 @Composable
 fun QuotaWidgetScreen(
@@ -51,24 +51,26 @@ fun QuotaWidgetContent(
     isDarkTheme: Boolean = isSystemInDarkTheme(),
     onRefreshClick: () -> Unit = {}
 ) {
-    // Compute derived values
-    val subscriptionProgress = remember(quotaWidgetState.subscriptionRequests, quotaWidgetState.subscriptionLimit) {
-        if (quotaWidgetState.subscriptionLimit > 0) {
-            quotaWidgetState.subscriptionRequests.toFloat() / quotaWidgetState.subscriptionLimit.toFloat()
-        } else {
-            0f
-        }
-    }
-    val toolProgress = remember(quotaWidgetState.toolLimit, quotaWidgetState.toolRequests) {
-        if (quotaWidgetState.toolLimit > 0) {
-            quotaWidgetState.toolRequests.toFloat() / quotaWidgetState.toolLimit.toFloat()
-        } else 0f
-    }
+    val quotaData = quotaWidgetState.quotaData
+    val isInitialized = quotaData != null
+
+    // Compute derived values - use 0 if not initialized
+    val subscriptionProgress = if (isInitialized) {
+        quotaData.subscriptionProgress
+    } else 0f
+
+    val toolProgress = if (isInitialized) {
+        quotaData.toolProgress
+    } else 0f
 
     val backgroundColor = if (isDarkTheme) Color(0xFF1A1A1A) else Color(0xFFF5F5F5)
     val textColorPrimary = if (isDarkTheme) Color(0xFFF3F4F6) else Color(0xFF1F2937)
     val textColorSecondary = if (isDarkTheme) Color(0xFFD1D5DB) else Color(0xFF374151)
     val textColorTertiary = if (isDarkTheme) Color(0xFF9CA3AF) else Color(0xFF6B7280)
+
+    // Grey colors for uninitialized state
+    val greyBarColor = Color(0xFF9CA3AF)
+    val greyBackgroundColor = Color(0xFFE5E7EB)
 
     Box(
         modifier = Modifier
@@ -80,61 +82,82 @@ fun QuotaWidgetContent(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.Start
         ) {
-            // Subscription Quota Section (Purple theme)
+            // Subscription Quota Section (Purple theme, grey if uninitialized)
             QuotaBar(
                 title = "Requests",
-                used = quotaWidgetState.subscriptionRequests,
-                limit = quotaWidgetState.subscriptionLimit,
+                used = if (isInitialized) quotaData.subscriptionRequests else null,
+                limit = if (isInitialized) quotaData.subscriptionLimit else null,
                 progress = subscriptionProgress,
-                barColor = Color(0xFF6366F1),
-                backgroundColor = Color(0xFFA5B4FC),
-                isDarkTheme = isDarkTheme
+                barColor = if (isInitialized) Color(0xFF6366F1) else greyBarColor,
+                backgroundColor = if (isInitialized) Color(0xFFA5B4FC) else greyBackgroundColor,
+                isDarkTheme = isDarkTheme,
+                showRenewal = isInitialized && quotaData.subscriptionRenewsAt != null,
+                renewalText = if (isInitialized) quotaData.subscriptionRenewsAt?.let { "Renews at $it" } ?: "" else ""
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Tools Section (Green theme)
+            // Tools Section (Green theme, grey if uninitialized)
             QuotaBar(
                 title = "Tools",
-                used = quotaWidgetState.toolRequests,
-                limit = quotaWidgetState.toolLimit,
+                used = if (isInitialized) quotaData.toolRequests else null,
+                limit = if (isInitialized) quotaData.toolLimit else null,
                 progress = toolProgress,
-                barColor = Color(0xFF10B981),
-                backgroundColor = Color(0xFFA7F3D0),
-                showRenewal = quotaWidgetState.toolRenewsAt != null,
-                renewalText = quotaWidgetState.toolRenewsAt?.let { "Renews in 23 hours and 21 minutes" } ?: "",
-                isDarkTheme = isDarkTheme
+                barColor = if (isInitialized) Color(0xFF10B981) else greyBarColor,
+                backgroundColor = if (isInitialized) Color(0xFFA7F3D0) else greyBackgroundColor,
+                isDarkTheme = isDarkTheme,
+                showRenewal = isInitialized && quotaData.toolRenewsAt != null,
+                renewalText = if (isInitialized) quotaData.toolRenewsAt?.let { "Renews at $it" } ?: "" else ""
             )
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Refresh button
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End
-            ) {
-                if (quotaWidgetState.isLoading) {
-                    // Show loading text
-                    Text(
-                        text = "Loading...",
-                        modifier = Modifier.width(56.dp),
-                        style = TextStyle(
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Normal,
-                            color = textColorPrimary
+            // Refresh button - only show when initialized
+            if (isInitialized) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End
+                ) {
+                    if (quotaWidgetState.isLoading) {
+                        // Show loading text
+                        Text(
+                            text = "Loading...",
+                            modifier = Modifier.width(56.dp),
+                            style = TextStyle(
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Normal,
+                                color = textColorPrimary
+                            )
                         )
-                    )
-                } else {
-                    // Show refresh button
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_refresh),
-                        contentDescription = "Refresh",
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clickable { onRefreshClick() },
-                        tint = textColorTertiary
-                    )
+                    } else {
+                        // Show refresh button
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_refresh),
+                            contentDescription = "Refresh",
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clickable { onRefreshClick() },
+                            tint = textColorTertiary
+                        )
+                    }
                 }
+            }
+        }
+
+        // Loading overlay button - show when not initialized (centered over the bars)
+        if (!isInitialized) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = androidx.compose.ui.Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_refresh),
+                    contentDescription = "Load data",
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clickable { onRefreshClick() },
+                    tint = textColorTertiary
+                )
             }
         }
     }
@@ -143,8 +166,8 @@ fun QuotaWidgetContent(
 @Composable
 fun QuotaBar(
     title: String,
-    used: Int,
-    limit: Int,
+    used: Int?,
+    limit: Int?,
     progress: Float,
     barColor: Color,
     backgroundColor: Color,
@@ -155,6 +178,8 @@ fun QuotaBar(
     val textColorPrimary = if (isDarkTheme) Color(0xFFF3F4F6) else Color(0xFF1F2937)
     val textColorSecondary = if (isDarkTheme) Color(0xFFD1D5DB) else Color(0xFF374151)
     val textColorTertiary = if (isDarkTheme) Color(0xFF9CA3AF) else Color(0xFF6B7280)
+    // Use grey text color when data is not available
+    val countTextColor = if (used != null && limit != null) textColorPrimary else textColorTertiary
 
     Column(modifier = Modifier.fillMaxWidth()) {
         // Title row with count
@@ -194,14 +219,15 @@ fun QuotaBar(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // Count display with fixed width for alignment
+            // Count display with fixed width for alignment - show ?/? when null
+            val countText = if (used != null && limit != null) "$used/$limit" else "?/?"
             Text(
-                text = "$used/$limit",
+                text = countText,
                 modifier = Modifier.width(56.dp),
                 style = TextStyle(
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = textColorPrimary
+                    color = countTextColor
                 )
             )
         }

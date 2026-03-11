@@ -43,7 +43,6 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.duchastel.simon.syntheticwidget.R
-import com.duchastel.simon.syntheticwidget.data.QuotaWidgetState
 import com.duchastel.simon.syntheticwidget.data.toQuotaWidgetState
 import com.duchastel.simon.syntheticwidget.worker.QuotaSyncWorker
 
@@ -61,20 +60,21 @@ class QuotaWidget : GlanceAppWidget() {
 
 @Composable
 fun QuotaWidgetContent(quotaWidgetState: QuotaWidgetState) {
+    val quotaData = quotaWidgetState.quotaData
+    val isInitialized = quotaData != null
 
-    // Compute derived values
-    val subscriptionProgress = remember(quotaWidgetState.subscriptionRequests, quotaWidgetState.subscriptionLimit) {
-        if (quotaWidgetState.subscriptionLimit > 0) {
-            quotaWidgetState.subscriptionRequests.toFloat() / quotaWidgetState.subscriptionLimit.toFloat()
-        } else {
-            0f
-        }
-    }
-    val toolProgress = remember (quotaWidgetState.toolLimit, quotaWidgetState.toolRequests) {
-        if (quotaWidgetState.toolLimit > 0) {
-            quotaWidgetState.toolRequests.toFloat() / quotaWidgetState.toolLimit.toFloat()
-        } else 0f
-    }
+    // Compute derived values - use 0 if not initialized
+    val subscriptionProgress = if (isInitialized) {
+        quotaData.subscriptionProgress
+    } else 0f
+
+    val toolProgress = if (isInitialized) {
+        quotaData.toolProgress
+    } else 0f
+
+    // Grey colors for uninitialized state
+    val greyBarColor = Color(0xFF9CA3AF)
+    val greyBackgroundColor = Color(0xFFE5E7EB)
 
     Box(
         modifier = GlanceModifier
@@ -89,67 +89,93 @@ fun QuotaWidgetContent(quotaWidgetState: QuotaWidgetState) {
             modifier = GlanceModifier.fillMaxSize(),
             horizontalAlignment = Alignment.Horizontal.Start
         ) {
-            // Subscription Quota Section (Purple theme)
+            // Subscription Quota Section (Purple theme, grey if uninitialized)
             QuotaBar(
                 title = "Requests",
-                used = quotaWidgetState.subscriptionRequests,
-                limit = quotaWidgetState.subscriptionLimit,
+                used = if (isInitialized) quotaData.subscriptionRequests else null,
+                limit = if (isInitialized) quotaData.subscriptionLimit else null,
                 progress = subscriptionProgress,
-                barColor = Color(0xFF6366F1),
-                backgroundColor = Color(0xFFA5B4FC)
+                barColor = if (isInitialized) Color(0xFF6366F1) else greyBarColor,
+                backgroundColor = if (isInitialized) Color(0xFFA5B4FC) else greyBackgroundColor,
+                showRenewal = isInitialized && quotaData.subscriptionRenewsAt != null,
+                renewalText = if (isInitialized) quotaData.subscriptionRenewsAt?.let { "Renews at $it" } ?: "" else ""
             )
 
             Spacer(modifier = GlanceModifier.height(8.dp))
 
-            // Tools Section (Green theme)
+            // Tools Section (Green theme, grey if uninitialized)
             QuotaBar(
                 title = "Tools",
-                used = quotaWidgetState.toolRequests,
-                limit = quotaWidgetState.toolLimit,
+                used = if (isInitialized) quotaData.toolRequests else null,
+                limit = if (isInitialized) quotaData.toolLimit else null,
                 progress = toolProgress,
-                barColor = Color(0xFF10B981),
-                backgroundColor = Color(0xFFA7F3D0),
-                showRenewal = quotaWidgetState.toolRenewsAt != null,
-                renewalText = quotaWidgetState.toolRenewsAt?.let { "Renews in 23 hours and 21 minutes" } ?: ""
+                barColor = if (isInitialized) Color(0xFF10B981) else greyBarColor,
+                backgroundColor = if (isInitialized) Color(0xFFA7F3D0) else greyBackgroundColor,
+                showRenewal = isInitialized && quotaData.toolRenewsAt != null,
+                renewalText = if (isInitialized) quotaData.toolRenewsAt?.let { "Renews at $it" } ?: "" else ""
             )
 
             Spacer(modifier = GlanceModifier.height(4.dp))
 
-            // Refresh button
-            Row(
-                modifier = GlanceModifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.Horizontal.End
-            ) {
-                if (quotaWidgetState.isLoading) {
-                    // Show loading text
-                    Text(
-                        text = "Loading...",
-                        modifier = GlanceModifier.width(56.dp),
-                        style = TextStyle(
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Normal,
-                            color = ColorProvider(
-                                day = Color(0xFF1F2937),
-                                night = Color(0xFFF3F4F6)
+            // Refresh button - only show when initialized
+            if (isInitialized) {
+                Row(
+                    modifier = GlanceModifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.Horizontal.End
+                ) {
+                    if (quotaWidgetState.isLoading) {
+                        // Show loading text
+                        Text(
+                            text = "Loading...",
+                            modifier = GlanceModifier.width(56.dp),
+                            style = TextStyle(
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Normal,
+                                color = ColorProvider(
+                                    day = Color(0xFF1F2937),
+                                    night = Color(0xFFF3F4F6)
+                                )
                             )
                         )
-                    )
-                } else {
-                    // Show refresh button
-                    Image(
-                        provider = ImageProvider(R.drawable.ic_refresh),
-                        contentDescription = "Refresh",
-                        modifier = GlanceModifier
-                            .size(24.dp)
-                            .clickable(actionRunCallback<RefreshAction>()),
-                        colorFilter = ColorFilter.tint(
-                            ColorProvider(
-                                day = Color(0xFF6B7280),
-                                night = Color(0xFF9CA3AF)
+                    } else {
+                        // Show refresh button
+                        Image(
+                            provider = ImageProvider(R.drawable.ic_refresh),
+                            contentDescription = "Refresh",
+                            modifier = GlanceModifier
+                                .size(24.dp)
+                                .clickable(actionRunCallback<RefreshAction>()),
+                            colorFilter = ColorFilter.tint(
+                                ColorProvider(
+                                    day = Color(0xFF6B7280),
+                                    night = Color(0xFF9CA3AF)
+                                )
                             )
                         )
-                    )
+                    }
                 }
+            }
+        }
+
+        // Loading overlay button - show when not initialized (centered over the bars)
+        if (!isInitialized) {
+            Box(
+                modifier = GlanceModifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    provider = ImageProvider(R.drawable.ic_refresh),
+                    contentDescription = "Load data",
+                    modifier = GlanceModifier
+                        .size(48.dp)
+                        .clickable(actionRunCallback<RefreshAction>()),
+                    colorFilter = ColorFilter.tint(
+                        ColorProvider(
+                            day = Color(0xFF6B7280),
+                            night = Color(0xFF9CA3AF)
+                        )
+                    )
+                )
             }
         }
     }
@@ -158,8 +184,8 @@ fun QuotaWidgetContent(quotaWidgetState: QuotaWidgetState) {
 @Composable
 fun QuotaBar(
     title: String,
-    used: Int,
-    limit: Int,
+    used: Int?,
+    limit: Int?,
     progress: Float,
     barColor: Color,
     backgroundColor: Color,
@@ -168,6 +194,19 @@ fun QuotaBar(
 ) {
     val width = LocalSize.current.width
     val progressBarWidth = remember(width, progress) { width * progress }
+    // Use grey text color when data is not available
+    val textColor = if (used != null && limit != null) {
+        ColorProvider(
+            day = Color(0xFF1F2937),
+            night = Color(0xFFF3F4F6)
+        )
+    } else {
+        ColorProvider(
+            day = Color(0xFF9CA3AF),
+            night = Color(0xFF6B7280)
+        )
+    }
+
     Column(modifier = GlanceModifier.fillMaxWidth()) {
         // Title row with count
         Row(
@@ -209,17 +248,15 @@ fun QuotaBar(
 
             Spacer(modifier = GlanceModifier.width(8.dp))
 
-            // Count display with fixed width for alignment
+            // Count display with fixed width for alignment - show ?/? when null
+            val countText = if (used != null && limit != null) "$used/$limit" else "?/?"
             Text(
-                text = "$used/$limit",
+                text = countText,
                 modifier = GlanceModifier.width(56.dp),
                 style = TextStyle(
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = ColorProvider(
-                        day = Color(0xFF1F2937),
-                        night = Color(0xFFF3F4F6)
-                    )
+                    color = textColor
                 )
             )
         }
