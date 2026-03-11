@@ -126,6 +126,7 @@ fun MainScreen(viewModel: MainViewModel) {
                 WidgetListItem(
                     maskedApiKey = maskedApiKey,
                     widgetInfo = widgetInfo,
+                    onRefreshClick = { viewModel.refreshWidget(widgetInfo.glanceId) },
                     onSettingsClick = { TODO() }
                 )
             }
@@ -137,6 +138,7 @@ fun MainScreen(viewModel: MainViewModel) {
 fun WidgetListItem(
     maskedApiKey: String,
     widgetInfo: WidgetInfo,
+    onRefreshClick: () -> Unit,
     onSettingsClick: () -> Unit
 ) {
     Row(
@@ -155,7 +157,7 @@ fun WidgetListItem(
             ) {
                 QuotaWidgetScreen(
                     quotaWidgetState = widgetInfo.state,
-                    onRefreshClick = {}
+                    onRefreshClick = onRefreshClick
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))

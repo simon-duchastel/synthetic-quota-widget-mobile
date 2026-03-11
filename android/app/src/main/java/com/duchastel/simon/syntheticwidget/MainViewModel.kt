@@ -1,6 +1,7 @@
 package com.duchastel.simon.syntheticwidget
 
 import android.content.Context
+import androidx.glance.GlanceId
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -17,7 +18,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class WidgetInfo(
-    val glanceId: String,
+    val glanceId: GlanceId,
     val state: QuotaWidgetState
 )
 
@@ -50,11 +51,18 @@ class MainViewModel @Inject constructor(
             val widgetList = glanceIds.map { glanceId ->
                 val state = quotaWidgetRepository.getWidgetState(glanceId)
                 WidgetInfo(
-                    glanceId = glanceId.toString(),
+                    glanceId = glanceId,
                     state = state
                 )
             }
             _widgets.value = widgetList
+        }
+    }
+
+    fun refreshWidget(glanceId: GlanceId) {
+        viewModelScope.launch {
+            quotaWidgetRepository.refreshData(glanceId)
+            loadWidgets()
         }
     }
 
