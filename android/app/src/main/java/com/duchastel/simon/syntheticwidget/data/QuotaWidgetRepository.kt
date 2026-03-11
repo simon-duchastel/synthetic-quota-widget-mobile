@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.glance.GlanceId
+import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.appwidget.state.updateAppWidgetState
 import com.duchastel.simon.syntheticwidget.widget.QuotaWidget
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -16,6 +17,10 @@ class QuotaWidgetRepository @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val networkClient: NetworkClient,
 ) {
+    suspend fun getWidgetState(glanceWidgetId: GlanceId): QuotaWidgetState {
+        return getAppWidgetState(context, glanceWidgetId).toQuotaWidgetState()
+    }
+
     suspend fun refreshData(glanceWidgetId: GlanceId): Boolean {
         // Fetch data from API
         return try {
