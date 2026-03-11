@@ -6,6 +6,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.datastore.preferences.core.Preferences
 import androidx.glance.ColorFilter
 import androidx.glance.ExperimentalGlanceApi
 import androidx.glance.GlanceId
@@ -23,7 +24,6 @@ import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
-import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.background
 import androidx.glance.color.ColorProvider
 import androidx.glance.currentState
@@ -44,13 +44,7 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.duchastel.simon.syntheticwidget.R
 import com.duchastel.simon.syntheticwidget.data.QuotaWidgetState
-import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.IS_LOADING
-import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.SUB_LIMIT
-import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.SUB_RENEWS_AT
-import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.SUB_REQUESTS
-import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.TOOL_LIMIT
-import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.TOOL_RENEWS_AT
-import com.duchastel.simon.syntheticwidget.data.WidgetRepository.Companion.TOOL_REQUESTS
+import com.duchastel.simon.syntheticwidget.data.toQuotaWidgetState
 import com.duchastel.simon.syntheticwidget.worker.QuotaSyncWorker
 
 class QuotaWidget : GlanceAppWidget() {
@@ -58,17 +52,8 @@ class QuotaWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
             GlanceTheme {
-                QuotaWidgetContent(
-                    QuotaWidgetState(
-                        subscriptionLimit = currentState(SUB_LIMIT) ?: 135,
-                        subscriptionRequests = currentState(SUB_REQUESTS) ?: 0,
-                        toolLimit = currentState(TOOL_LIMIT) ?: 500,
-                        toolRequests = currentState(TOOL_REQUESTS) ?: 34,
-                        subscriptionRenewsAt = currentState(SUB_RENEWS_AT),
-                        toolRenewsAt = currentState(TOOL_RENEWS_AT),
-                        isLoading = currentState(IS_LOADING) ?: false,
-                    )
-                )
+                val quotaWidgetState = currentState<Preferences>().toQuotaWidgetState()
+                QuotaWidgetContent(quotaWidgetState)
             }
         }
     }
@@ -263,15 +248,6 @@ class RefreshAction : ActionCallback {
         glanceId: GlanceId,
         parameters: ActionParameters
     ) {
-        // Trigger widget update to show loading state
-        updateAppWidgetState(context, glanceId) {
-            it.apply {
-                this[IS_LOADING] = true
-            }
-        }
-        QuotaWidget().update(context, glanceId)
-
-        // Start the sync worker with the appWidgetId
         val appWidgetManager = GlanceAppWidgetManager(context)
         val appWidgetId = appWidgetManager.getAppWidgetId(glanceId)
         QuotaSyncWorker.runImmediately(context, appWidgetId)
