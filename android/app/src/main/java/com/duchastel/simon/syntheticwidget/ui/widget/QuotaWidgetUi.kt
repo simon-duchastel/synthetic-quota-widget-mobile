@@ -93,8 +93,8 @@ fun QuotaWidgetContent(
                 backgroundColor = if (isInitialized) Color(0xFFA5B4FC) else greyBackgroundColor,
                 isDarkTheme = isDarkTheme,
                 renewalText = if (isInitialized) {
-                    remember(quotaWidgetState.subscriptionRenewsAt) {
-                        formatRenewalTime(quotaWidgetState.subscriptionRenewsAt)
+                    remember(quotaWidgetState.quotaData.subscriptionRenewsAt) {
+                        formatRenewalTime(quotaWidgetState.quotaData.subscriptionRenewsAt)
                     }
                 } else {
                     ""
@@ -112,8 +112,8 @@ fun QuotaWidgetContent(
                 barColor = if (isInitialized) Color(0xFF10B981) else greyBarColor,
                 backgroundColor = if (isInitialized) Color(0xFFA7F3D0) else greyBackgroundColor,
                 isDarkTheme = isDarkTheme,
-                renewalText = if (isInitialized) remember(quotaWidgetState.toolRenewsAt) {
-                    formatRenewalTime(quotaWidgetState.toolRenewsAt)
+                renewalText = if (isInitialized) remember(quotaWidgetState.quotaData.toolRenewsAt) {
+                    formatRenewalTime(quotaWidgetState.quotaData.toolRenewsAt)
                 } else {
                     ""
                 }
