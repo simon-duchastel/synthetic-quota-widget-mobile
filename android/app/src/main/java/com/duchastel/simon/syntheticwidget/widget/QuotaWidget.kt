@@ -44,6 +44,7 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.duchastel.simon.syntheticwidget.R
 import com.duchastel.simon.syntheticwidget.data.QuotaWidgetState
+import com.duchastel.simon.syntheticwidget.data.formatRenewalTime
 import com.duchastel.simon.syntheticwidget.data.toQuotaWidgetState
 import com.duchastel.simon.syntheticwidget.worker.QuotaSyncWorker
 
@@ -96,7 +97,8 @@ fun QuotaWidgetContent(quotaWidgetState: QuotaWidgetState) {
                 limit = quotaWidgetState.subscriptionLimit,
                 progress = subscriptionProgress,
                 barColor = Color(0xFF6366F1),
-                backgroundColor = Color(0xFFA5B4FC)
+                backgroundColor = Color(0xFFA5B4FC),
+                renewalText = formatRenewalTime(quotaWidgetState.subscriptionRenewsAt)
             )
 
             Spacer(modifier = GlanceModifier.height(8.dp))
@@ -109,8 +111,7 @@ fun QuotaWidgetContent(quotaWidgetState: QuotaWidgetState) {
                 progress = toolProgress,
                 barColor = Color(0xFF10B981),
                 backgroundColor = Color(0xFFA7F3D0),
-                showRenewal = quotaWidgetState.toolRenewsAt != null,
-                renewalText = quotaWidgetState.toolRenewsAt?.let { "Renews in 23 hours and 21 minutes" } ?: ""
+                renewalText = formatRenewalTime(quotaWidgetState.toolRenewsAt)
             )
 
             Spacer(modifier = GlanceModifier.height(4.dp))
@@ -163,8 +164,7 @@ fun QuotaBar(
     progress: Float,
     barColor: Color,
     backgroundColor: Color,
-    showRenewal: Boolean = false,
-    renewalText: String = ""
+    renewalText: String? = null
 ) {
     val width = LocalSize.current.width
     val progressBarWidth = remember(width, progress) { width * progress }
@@ -225,7 +225,7 @@ fun QuotaBar(
         }
 
         // Renewal text
-        if (showRenewal && renewalText.isNotEmpty()) {
+        if (renewalText != null) {
             Spacer(modifier = GlanceModifier.height(2.dp))
             Text(
                 text = renewalText,

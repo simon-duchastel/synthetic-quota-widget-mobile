@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.duchastel.simon.syntheticwidget.R
 import com.duchastel.simon.syntheticwidget.data.QuotaWidgetState
+import com.duchastel.simon.syntheticwidget.data.formatRenewalTime
 
 @Composable
 fun QuotaWidgetScreen(
@@ -88,7 +89,8 @@ fun QuotaWidgetContent(
                 progress = subscriptionProgress,
                 barColor = Color(0xFF6366F1),
                 backgroundColor = Color(0xFFA5B4FC),
-                isDarkTheme = isDarkTheme
+                isDarkTheme = isDarkTheme,
+                renewalText = formatRenewalTime(quotaWidgetState.subscriptionRenewsAt)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -101,9 +103,8 @@ fun QuotaWidgetContent(
                 progress = toolProgress,
                 barColor = Color(0xFF10B981),
                 backgroundColor = Color(0xFFA7F3D0),
-                showRenewal = quotaWidgetState.toolRenewsAt != null,
-                renewalText = quotaWidgetState.toolRenewsAt?.let { "Renews in 23 hours and 21 minutes" } ?: "",
-                isDarkTheme = isDarkTheme
+                isDarkTheme = isDarkTheme,
+                renewalText = formatRenewalTime(quotaWidgetState.toolRenewsAt)
             )
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -149,8 +150,7 @@ fun QuotaBar(
     barColor: Color,
     backgroundColor: Color,
     isDarkTheme: Boolean = isSystemInDarkTheme(),
-    showRenewal: Boolean = false,
-    renewalText: String = ""
+    renewalText: String? = null
 ) {
     val textColorPrimary = if (isDarkTheme) Color(0xFFF3F4F6) else Color(0xFF1F2937)
     val textColorSecondary = if (isDarkTheme) Color(0xFFD1D5DB) else Color(0xFF374151)
@@ -207,7 +207,7 @@ fun QuotaBar(
         }
 
         // Renewal text
-        if (showRenewal && renewalText.isNotEmpty()) {
+        if (renewalText != null) {
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = renewalText,
