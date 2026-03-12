@@ -1,10 +1,23 @@
 package com.duchastel.simon.syntheticwidget
 
 import android.app.Application
+import android.appwidget.AppWidgetManager
+import android.appwidget.AppWidgetProviderInfo.WIDGET_CATEGORY_HOME_SCREEN
+import android.content.ComponentName
+import android.content.Context
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.glance.appwidget.GlanceAppWidgetManager
+import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.duchastel.simon.syntheticwidget.worker.QuotaSyncWorker
 import dagger.hilt.android.HiltAndroidApp
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -22,5 +35,41 @@ class SyntheticWidgetApplication : Application(), Configuration.Provider {
         super.onCreate()
 
         QuotaSyncWorker.schedule(this)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            MainScope().launch {
+                registerWidgetPreviews()
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    context(@ApplicationContext applicationContext: Context)
+    fun Class<GlanceAppWidgetReceiver>.hasPreviewForCategory(widgetCategory: Int): Boolean {
+        val component = ComponentName(applicationContext, this)
+        val providerInfo =
+            (applicationContext.getSystemService(APPWIDGET_SERVICE) as AppWidgetManager)
+                .installedProviders
+                .first { providerInfo -> providerInfo.provider == component }
+        return providerInfo.generatedPreviewCategories.and(widgetCategory) != 0
+    }
+
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    private suspend fun registerWidgetPreviews() {
+        val glanceAppWidgetManager = GlanceAppWidgetManager(applicationContext)
+        withContext(Dispatchers.Default) {
+            runCatching {
+                for (receiver in APP_WIDGET_RECEIVER_CLASSES) {
+                    if (receiver.hasPreviewForCategory(WIDGET_CATEGORY_HOME_SCREEN)) {
+                        continue
+                    }
+                    glanceAppWidgetManager.setWidgetPreviews(receiver.kotlin)
+                }
+            }
+        }
+    }
+
+    companion object {
+        val APP_WIDGET_RECEIVER_CLASSES = listOf(GlanceAppWidgetReceiver::class.java)
     }
 }

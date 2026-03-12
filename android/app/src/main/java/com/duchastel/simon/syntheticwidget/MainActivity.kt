@@ -16,12 +16,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -29,7 +27,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -39,7 +36,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.duchastel.simon.syntheticwidget.ui.selector.WidgetSelectorScreen
 import com.duchastel.simon.syntheticwidget.ui.theme.SyntheticWidgetTheme
 import com.duchastel.simon.syntheticwidget.ui.widget.QuotaWidgetScreen
 import dagger.hilt.android.AndroidEntryPoint
@@ -66,25 +62,12 @@ fun MainScreen(viewModel: MainViewModel) {
     val maskedApiKey by viewModel.maskedApiKey.collectAsState()
     val widgets by viewModel.widgets.collectAsState()
     var apiKeyInput by remember { mutableStateOf("") }
-    var showWidgetSelector by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Synthetic Widget") }
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showWidgetSelector = true },
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add Widget",
-                    tint = MaterialTheme.colorScheme.onPrimary
-                )
-            }
         }
     ) { paddingValues ->
         LazyColumn(
@@ -148,28 +131,6 @@ fun MainScreen(viewModel: MainViewModel) {
                 )
             }
         }
-    }
-
-    // Widget Selector Dialog
-    if (showWidgetSelector) {
-        AlertDialog(
-            onDismissRequest = { showWidgetSelector = false },
-            title = { Text("Widget Gallery") },
-            text = {
-                WidgetSelectorScreen(
-                    modifier = Modifier.height(400.dp),
-                    onWidgetSelected = { widgetItem ->
-                        // TODO: Handle widget selection - add the widget
-                        showWidgetSelector = false
-                    },
-                    onAddWidgetClick = {
-                        showWidgetSelector = false
-                    }
-                )
-            },
-            confirmButton = {},
-            dismissButton = {}
-        )
     }
 }
 
