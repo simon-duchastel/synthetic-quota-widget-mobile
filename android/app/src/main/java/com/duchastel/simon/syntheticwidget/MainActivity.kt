@@ -196,7 +196,7 @@ fun WidgetListScreen(
 fun SettingsScreen(
     viewModel: MainViewModel,
     widgetId: Int,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
 ) {
     val widgets by viewModel.widgets.collectAsState()
     val widgetInfo = widgets.find { widget ->
@@ -220,24 +220,29 @@ fun SettingsScreen(
     ) { paddingValues ->
         Column(
             modifier = Modifier
-                .fillMaxSize()
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
-            // Widget preview at the top
-            widgetInfo?.let { info ->
+            widgetInfo?.let { _ ->
                 Card(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp),
+                        .weight(1f),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp)
                     ) {
                         QuotaWidgetScreen(
-                            quotaWidgetState = info.state,
-                            onRefreshClick = { viewModel.refreshWidget(info.glanceId) }
+                            quotaWidgetState = widgetInfo.state,
+                            onRefreshClick = { },
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = "current api key: ???",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
