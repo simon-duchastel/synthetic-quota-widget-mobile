@@ -19,6 +19,7 @@ import javax.inject.Inject
 
 data class WidgetInfo(
     val glanceId: GlanceId,
+    val appWidgetId: Int,
     val state: QuotaWidgetState
 )
 
@@ -50,8 +51,10 @@ class MainViewModel @Inject constructor(
             val glanceIds = glanceManager.getGlanceIds(QuotaWidget::class.java)
             val widgetList = glanceIds.map { glanceId ->
                 val state = quotaWidgetRepository.getWidgetState(glanceId)
+                val appWidgetId = glanceManager.getAppWidgetId(glanceId)
                 WidgetInfo(
                     glanceId = glanceId,
+                    appWidgetId = appWidgetId,
                     state = state
                 )
             }
