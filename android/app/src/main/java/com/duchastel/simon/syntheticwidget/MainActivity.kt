@@ -226,7 +226,7 @@ fun SettingsScreen(
             widgetInfo?.let { _ ->
                 Card(
                     modifier = Modifier
-                        .weight(1f),
+                        .fillMaxWidth(),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                 ) {
                     Column(

@@ -75,12 +75,12 @@ fun QuotaWidgetContent(
 
     Box(
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxWidth()
             .background(backgroundColor)
             .padding(12.dp)
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.Start
         ) {
             // Subscription Quota Section (Purple theme, grey if uninitialized)
