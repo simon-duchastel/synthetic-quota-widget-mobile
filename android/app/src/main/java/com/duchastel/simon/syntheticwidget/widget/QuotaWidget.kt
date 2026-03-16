@@ -63,6 +63,7 @@ class QuotaWidget : GlanceAppWidget() {
 fun QuotaWidgetContent(quotaWidgetState: QuotaWidgetState) {
     val quotaData = quotaWidgetState.quotaData
     val isInitialized = quotaData != null
+    val isClearBackground = quotaWidgetState.isClearBackground
 
     // Compute derived values - use 0 if not initialized
     val subscriptionProgress = if (isInitialized) {
@@ -80,10 +81,14 @@ fun QuotaWidgetContent(quotaWidgetState: QuotaWidgetState) {
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(ColorProvider(
-                day = Color(0xFFF5F5F5),
-                night = Color(0xFF1A1A1A)
-            ))
+            .background(if (isClearBackground) {
+                ColorProvider(Color.Transparent)
+            } else {
+                ColorProvider(
+                    day = Color(0xFFF5F5F5),
+                    night = Color(0xFF1A1A1A)
+                )
+            })
             .padding(12.dp)
     ) {
         Column(
