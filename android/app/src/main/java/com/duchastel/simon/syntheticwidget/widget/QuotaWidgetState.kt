@@ -28,4 +28,5 @@ data class QuotaData(
 data class QuotaWidgetState(
     val quotaData: QuotaData? = null,
     val isLoading: Boolean = false,
+    val isClearBackground: Boolean = false,
 )

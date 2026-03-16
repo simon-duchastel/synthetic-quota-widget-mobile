@@ -77,4 +77,11 @@ class MainViewModel @Inject constructor(
             }
         }
     }
+
+    fun setClearBackground(glanceId: GlanceId, isClearBackground: Boolean) {
+        viewModelScope.launch {
+            quotaWidgetRepository.setClearBackground(glanceId, isClearBackground)
+            loadWidgets()
+        }
+    }
 }

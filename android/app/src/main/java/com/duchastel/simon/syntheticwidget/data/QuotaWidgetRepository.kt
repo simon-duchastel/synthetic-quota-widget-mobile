@@ -68,6 +68,13 @@ class QuotaWidgetRepository @Inject constructor(
         }
         QuotaWidget().update(context, glanceWidgetId)
     }
+
+    suspend fun setClearBackground(glanceWidgetId: GlanceId, isClearBackground: Boolean) {
+        updateAppWidgetState(context, glanceWidgetId) { preferences ->
+            preferences[IS_CLEAR_BACKGROUND] = isClearBackground
+        }
+        QuotaWidget().update(context, glanceWidgetId)
+    }
 }
 
 private val SUB_LIMIT = intPreferencesKey("sub_limit")
@@ -77,6 +84,7 @@ private val TOOL_REQUESTS = intPreferencesKey("tool_requests")
 private val SUB_RENEWS_AT = stringPreferencesKey("sub_renews_at")
 private val TOOL_RENEWS_AT = stringPreferencesKey("tool_renews_at")
 private val IS_LOADING = booleanPreferencesKey("is_loading")
+private val IS_CLEAR_BACKGROUND = booleanPreferencesKey("is_clear_background")
 
 fun Preferences.toQuotaWidgetState(): QuotaWidgetState {
     // Required fields - if any are missing, we don't have valid quota data
@@ -99,5 +107,6 @@ fun Preferences.toQuotaWidgetState(): QuotaWidgetState {
     return QuotaWidgetState(
         quotaData = quotaData,
         isLoading = this[IS_LOADING] ?: false,
+        isClearBackground = this[IS_CLEAR_BACKGROUND] ?: false,
     )
 }

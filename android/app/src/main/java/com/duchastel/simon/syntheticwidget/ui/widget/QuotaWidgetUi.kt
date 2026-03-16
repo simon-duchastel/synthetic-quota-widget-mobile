@@ -28,6 +28,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.glance.background
+import androidx.glance.color.ColorProvider
 import com.duchastel.simon.syntheticwidget.R
 import com.duchastel.simon.syntheticwidget.widget.QuotaWidgetState
 import com.duchastel.simon.syntheticwidget.utils.formatRenewalTime
@@ -54,6 +56,7 @@ fun QuotaWidgetContent(
 ) {
     val quotaData = quotaWidgetState.quotaData
     val isInitialized = quotaData != null
+    val isClearBackground = quotaWidgetState.isClearBackground
 
     // Compute derived values - use 0 if not initialized
     val subscriptionProgress = if (isInitialized) {
@@ -76,7 +79,11 @@ fun QuotaWidgetContent(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(backgroundColor)
+            .background(if (isClearBackground) {
+                Color.Transparent
+            } else {
+                backgroundColor
+            })
             .padding(12.dp)
     ) {
         Column(
