@@ -82,11 +82,14 @@ fun QuotaWidgetContent(quotaWidgetState: QuotaWidgetState) {
         modifier = GlanceModifier
             .fillMaxSize()
             .background(if (isClearBackground) {
-                ColorProvider(Color.Transparent)
+                ColorProvider(
+                    day = Color.Transparent,
+                    night = Color.Transparent,
+                )
             } else {
                 ColorProvider(
                     day = Color(0xFFF5F5F5),
-                    night = Color(0xFF1A1A1A)
+                    night = Color(0xFF1A1A1A),
                 )
             })
             .padding(12.dp)
