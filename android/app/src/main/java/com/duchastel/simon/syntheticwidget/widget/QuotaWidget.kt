@@ -20,6 +20,7 @@ import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.cornerRadius
@@ -32,6 +33,7 @@ import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
+import androidx.glance.layout.collectPadding
 import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
@@ -39,6 +41,7 @@ import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
 import androidx.glance.layout.width
+import androidx.glance.semantics.semantics
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
@@ -48,6 +51,8 @@ import com.duchastel.simon.syntheticwidget.utils.formatRenewalTime
 import com.duchastel.simon.syntheticwidget.worker.QuotaSyncWorker
 
 class QuotaWidget : GlanceAppWidget() {
+
+    override val sizeMode: SizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
@@ -211,8 +216,11 @@ fun QuotaBar(
     renewalText: String? = null
 ) {
     val totalWidth = LocalSize.current.width
-    val fixedElementsWidth = 64.dp + 8.dp + 56.dp // title + spacer + count
-    val progressBarWidthTotal = totalWidth - fixedElementsWidth
+    val leftRegionWidth = 64.dp
+    val rightRegionWidth = 80.dp
+    val spacerWidth = 8.dp
+    val nonProgressBarWidth = leftRegionWidth + (spacerWidth * 2) + rightRegionWidth
+    val progressBarWidthTotal = totalWidth - nonProgressBarWidth
     val progressBarWidthUsedSoFar = remember(totalWidth, progress) {
         (progressBarWidthTotal * progress)
     }
@@ -237,7 +245,7 @@ fun QuotaBar(
             // Title with fixed width for alignment
             Text(
                 text = title,
-                modifier = GlanceModifier.width(64.dp),
+                modifier = GlanceModifier.width(leftRegionWidth),
                 style = TextStyle(
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
@@ -248,7 +256,7 @@ fun QuotaBar(
                 )
             )
 
-            Spacer(modifier = GlanceModifier.width(8.dp))
+            Spacer(modifier = GlanceModifier.width(spacerWidth))
 
             // Progress bar container
             Box(
@@ -267,13 +275,13 @@ fun QuotaBar(
                 ) {}
             }
 
-            Spacer(modifier = GlanceModifier.width(8.dp))
+            Spacer(modifier = GlanceModifier.width(spacerWidth))
 
             // Count display with fixed width for alignment - show ?/? when null
             val countText = if (used != null && limit != null) "$used/$limit" else "?/?"
             Text(
                 text = countText,
-                modifier = GlanceModifier.width(56.dp),
+                modifier = GlanceModifier.width(rightRegionWidth),
                 style = TextStyle(
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,

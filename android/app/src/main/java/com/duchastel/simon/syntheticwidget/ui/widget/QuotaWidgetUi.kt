@@ -28,7 +28,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.glance.LocalSize
 import com.duchastel.simon.syntheticwidget.R
 import com.duchastel.simon.syntheticwidget.utils.formatRenewalTime
 import com.duchastel.simon.syntheticwidget.widget.QuotaWidgetState
@@ -189,13 +188,6 @@ fun QuotaBar(
     isDarkTheme: Boolean = isSystemInDarkTheme(),
     renewalText: String? = null
 ) {
-    val totalWidth = LocalSize.current.width
-    val fixedElementsWidth = 64.dp + 8.dp + 56.dp // title + spacer + count
-    val progressBarWidthTotal = totalWidth - fixedElementsWidth
-    val progressBarWidthUsedSoFar = remember(totalWidth, progress) {
-        (progressBarWidthTotal * progress)
-    }
-
     val textColorPrimary = if (isDarkTheme) Color(0xFFF3F4F6) else Color(0xFF1F2937)
     val textColorSecondary = if (isDarkTheme) Color(0xFFD1D5DB) else Color(0xFF374151)
     val textColorTertiary = if (isDarkTheme) Color(0xFF9CA3AF) else Color(0xFF6B7280)
@@ -223,7 +215,7 @@ fun QuotaBar(
             // Progress bar container
             Box(
                 modifier = Modifier
-                    .width(progressBarWidthTotal)
+                    .weight(1f)
                     .height(8.dp)
                     .clip(RoundedCornerShape(4.dp))
                     .background(backgroundColor)
@@ -231,7 +223,7 @@ fun QuotaBar(
                 Box(
                     modifier = Modifier
                         .fillMaxHeight()
-                        .width(progressBarWidthUsedSoFar)
+                        .fillMaxWidth(progress)
                         .background(barColor)
                         .clip(RoundedCornerShape(4.dp))
                 )
