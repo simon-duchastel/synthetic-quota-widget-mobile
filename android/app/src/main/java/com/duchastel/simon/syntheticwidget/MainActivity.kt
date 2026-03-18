@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -21,17 +22,23 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -42,6 +49,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -49,6 +57,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.duchastel.simon.syntheticwidget.data.ApiKeyEntry
 import com.duchastel.simon.syntheticwidget.ui.theme.SyntheticWidgetTheme
 import com.duchastel.simon.syntheticwidget.ui.widget.QuotaWidgetScreen
 import dagger.hilt.android.AndroidEntryPoint
@@ -117,9 +126,8 @@ fun WidgetListScreen(
     viewModel: MainViewModel,
     onNavigateToSettings: (Int) -> Unit
 ) {
-    val maskedApiKey by viewModel.maskedApiKey.collectAsState()
     val widgets by viewModel.widgets.collectAsState()
-    var apiKeyInput by remember { mutableStateOf("") }
+    val apiKeys by viewModel.apiKeys.collectAsState()
 
     Scaffold(
         topBar = {
@@ -136,44 +144,6 @@ fun WidgetListScreen(
         ) {
             item {
                 Text(
-                    text = "API Key Configuration",
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-
-                if (maskedApiKey.isNotEmpty()) {
-                    Text(
-                        text = "Current API Key: $maskedApiKey",
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-                }
-
-                OutlinedTextField(
-                    value = apiKeyInput,
-                    onValueChange = { apiKeyInput = it },
-                    label = { Text("Enter Synthetic API Key") },
-                    placeholder = { Text("syn_...") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-
-                Button(
-                    onClick = {
-                        viewModel.saveApiKey(apiKeyInput)
-                        apiKeyInput = ""
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 16.dp),
-                    enabled = apiKeyInput.isNotBlank()
-                ) {
-                    Text("Save API Key")
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Text(
                     text = "Your Widgets",
                     style = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier.padding(bottom = 16.dp)
@@ -181,8 +151,9 @@ fun WidgetListScreen(
             }
 
             items(widgets) { widgetInfo ->
+                val apiKey = viewModel.getApiKeyForWidget(widgetInfo)
                 WidgetListItem(
-                    maskedApiKey = maskedApiKey,
+                    apiKey = apiKey,
                     widgetInfo = widgetInfo,
                     onRefreshClick = { viewModel.refreshWidget(widgetInfo.glanceId) },
                     onSettingsClick = { onNavigateToSettings(widgetInfo.appWidgetId) }
@@ -200,9 +171,13 @@ fun SettingsScreen(
     onNavigateBack: () -> Unit,
 ) {
     val widgets by viewModel.widgets.collectAsState()
+    val apiKeys by viewModel.apiKeys.collectAsState()
     val widgetInfo = widgets.find { widget ->
         widget.appWidgetId == widgetId
     }
+    val currentApiKey = widgetInfo?.let { viewModel.getApiKeyForWidget(it) }
+
+    var showAddKeyDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -224,7 +199,7 @@ fun SettingsScreen(
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
-            widgetInfo?.let { _ ->
+            widgetInfo?.let { info ->
                 Card(
                     modifier = Modifier
                         .fillMaxWidth(),
@@ -234,14 +209,19 @@ fun SettingsScreen(
                         modifier = Modifier.padding(16.dp)
                     ) {
                         QuotaWidgetScreen(
-                            quotaWidgetState = widgetInfo.state,
+                            quotaWidgetState = info.state,
                             onRefreshClick = { },
                         )
 
                         Spacer(modifier = Modifier.height(8.dp))
 
+                        val apiKeyDisplay = if (currentApiKey != null) {
+                            "${currentApiKey.name}: ${currentApiKey.getMaskedKey()}"
+                        } else {
+                            "No API key assigned"
+                        }
                         Text(
-                            text = "current api key: ???",
+                            text = "current api key: $apiKeyDisplay",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -257,6 +237,28 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
+
+            // API Key dropdown
+            Text(
+                text = "API Key",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            ApiKeyDropdown(
+                apiKeys = apiKeys,
+                selectedApiKey = currentApiKey,
+                onApiKeySelected = { apiKey ->
+                    widgetInfo?.let { info ->
+                        viewModel.setWidgetApiKey(info.glanceId, apiKey?.id)
+                    }
+                },
+                onAddNewKey = {
+                    showAddKeyDialog = true
+                }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Clear background checkbox
             Row(
@@ -281,11 +283,161 @@ fun SettingsScreen(
             }
         }
     }
+
+    if (showAddKeyDialog) {
+        AddApiKeyDialog(
+            onDismiss = { showAddKeyDialog = false },
+            onConfirm = { name, apiKey ->
+                viewModel.addApiKey(name, apiKey)
+                showAddKeyDialog = false
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ApiKeyDropdown(
+    apiKeys: List<ApiKeyEntry>,
+    selectedApiKey: ApiKeyEntry?,
+    onApiKeySelected: (ApiKeyEntry?) -> Unit,
+    onAddNewKey: () -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        OutlinedTextField(
+            value = selectedApiKey?.let { "${it.name} (${it.getMaskedKey()})" } ?: "Select an API key",
+            onValueChange = {},
+            readOnly = true,
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor()
+        )
+
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            // Option to clear selection
+            DropdownMenuItem(
+                text = { Text("None") },
+                onClick = {
+                    onApiKeySelected(null)
+                    expanded = false
+                }
+            )
+
+            // List existing keys
+            apiKeys.forEach { apiKey ->
+                DropdownMenuItem(
+                    text = { Text("${apiKey.name} (${apiKey.getMaskedKey()})") },
+                    onClick = {
+                        onApiKeySelected(apiKey)
+                        expanded = false
+                    }
+                )
+            }
+
+            // Add new key option
+            DropdownMenuItem(
+                text = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                        Text("Add new key")
+                    }
+                },
+                onClick = {
+                    onAddNewKey()
+                    expanded = false
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun AddApiKeyDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (name: String, apiKey: String) -> Unit
+) {
+    var name by remember { mutableStateOf("") }
+    var apiKey by remember { mutableStateOf("") }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Text(
+                    text = "Add New API Key",
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Key Name") },
+                    placeholder = { Text("e.g., Work Account") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = apiKey,
+                    onValueChange = { apiKey = it },
+                    label = { Text("API Key") },
+                    placeholder = { Text("syn_...") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("Cancel")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = {
+                            if (name.isNotBlank() && apiKey.isNotBlank()) {
+                                onConfirm(name, apiKey)
+                            }
+                        },
+                        enabled = name.isNotBlank() && apiKey.isNotBlank()
+                    ) {
+                        Text("Add")
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
 fun WidgetListItem(
-    maskedApiKey: String,
+    apiKey: ApiKeyEntry?,
     widgetInfo: WidgetInfo,
     onRefreshClick: () -> Unit,
     onSettingsClick: () -> Unit
@@ -312,8 +464,13 @@ fun WidgetListItem(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
+                val apiKeyDisplay = if (apiKey != null) {
+                    "${apiKey.name}: ${apiKey.getMaskedKey()}"
+                } else {
+                    "No API key assigned"
+                }
                 Text(
-                    text = "current api key: $maskedApiKey",
+                    text = "current api key: $apiKeyDisplay",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

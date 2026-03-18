@@ -1,32 +1,38 @@
 package com.duchastel.simon.syntheticwidget.data
 
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 interface AuthRepository {
-    suspend fun saveApiKey(apiKey: String)
-    suspend fun getApiKey(): String?
-    fun getMaskedApiKey(): Flow<String>
+    suspend fun saveApiKey(apiKey: ApiKeyEntry)
+    suspend fun deleteApiKey(id: String)
+    suspend fun getApiKey(id: String): ApiKeyEntry?
+    suspend fun getApiKeys(): List<ApiKeyEntry>
+    fun getApiKeysFlow(): Flow<List<ApiKeyEntry>>
 }
 
 class AuthRepositoryImpl @Inject constructor(
     private val authDataStore: AuthDataStore
 ) : AuthRepository {
 
-    override suspend fun saveApiKey(apiKey: String) {
+    override suspend fun saveApiKey(apiKey: ApiKeyEntry) {
         authDataStore.saveApiKey(apiKey)
     }
 
-    override suspend fun getApiKey(): String? {
-        return authDataStore.getApiKey()
+    override suspend fun deleteApiKey(id: String) {
+        authDataStore.deleteApiKey(id)
     }
 
-    override fun getMaskedApiKey(): Flow<String> {
-        return flow {
-            val apiKey = authDataStore.getApiKey()
-            emit(ApiKeyMasker.mask(apiKey))
-        }
+    override suspend fun getApiKey(id: String): ApiKeyEntry? {
+        return authDataStore.getApiKey(id)
+    }
+
+    override suspend fun getApiKeys(): List<ApiKeyEntry> {
+        return authDataStore.getApiKeys()
+    }
+
+    override fun getApiKeysFlow(): Flow<List<ApiKeyEntry>> {
+        return authDataStore.getApiKeysFlow()
     }
 }
 
