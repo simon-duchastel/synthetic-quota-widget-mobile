@@ -210,12 +210,12 @@ fun QuotaBar(
     backgroundColor: Color,
     renewalText: String? = null
 ) {
-    // Calculate available width for bars by subtracting fixed elements
     val totalWidth = LocalSize.current.width
     val fixedElementsWidth = 64.dp + 8.dp + 56.dp // title + spacer + count
-    val availableWidth = totalWidth - fixedElementsWidth
-    val progressBarWidth = remember(totalWidth, progress) { (availableWidth * progress).toInt() }
-    // Use grey text color when data is not available
+    val progressBarWidthTotal = totalWidth - fixedElementsWidth
+    val progressBarWidthUsedSoFar = remember(totalWidth, progress) {
+        (progressBarWidthTotal * progress)
+    }
     val textColor = if (used != null && limit != null) {
         ColorProvider(
             day = Color(0xFF1F2937),
@@ -253,7 +253,7 @@ fun QuotaBar(
             // Progress bar container
             Box(
                 modifier = GlanceModifier
-                    .width(availableWidth)
+                    .width(progressBarWidthTotal)
                     .height(8.dp)
                     .cornerRadius(4.dp)
                     .background(backgroundColor)
@@ -261,7 +261,7 @@ fun QuotaBar(
                 Box(
                     modifier = GlanceModifier
                         .fillMaxHeight()
-                        .width(progressBarWidth)
+                        .width(progressBarWidthUsedSoFar)
                         .background(barColor)
                         .cornerRadius(4.dp)
                 ) {}

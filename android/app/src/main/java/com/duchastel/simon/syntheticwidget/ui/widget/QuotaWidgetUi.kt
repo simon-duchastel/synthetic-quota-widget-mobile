@@ -28,11 +28,10 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.glance.background
-import androidx.glance.color.ColorProvider
+import androidx.glance.LocalSize
 import com.duchastel.simon.syntheticwidget.R
-import com.duchastel.simon.syntheticwidget.widget.QuotaWidgetState
 import com.duchastel.simon.syntheticwidget.utils.formatRenewalTime
+import com.duchastel.simon.syntheticwidget.widget.QuotaWidgetState
 
 @Composable
 fun QuotaWidgetScreen(
@@ -190,16 +189,16 @@ fun QuotaBar(
     isDarkTheme: Boolean = isSystemInDarkTheme(),
     renewalText: String? = null
 ) {
-    // Calculate available width for bars by subtracting fixed elements
     val totalWidth = LocalSize.current.width
     val fixedElementsWidth = 64.dp + 8.dp + 56.dp // title + spacer + count
-    val availableWidth = totalWidth - fixedElementsWidth
-    val progressBarWidth = remember(totalWidth, progress) { (availableWidth * progress).toInt() }
+    val progressBarWidthTotal = totalWidth - fixedElementsWidth
+    val progressBarWidthUsedSoFar = remember(totalWidth, progress) {
+        (progressBarWidthTotal * progress)
+    }
 
     val textColorPrimary = if (isDarkTheme) Color(0xFFF3F4F6) else Color(0xFF1F2937)
     val textColorSecondary = if (isDarkTheme) Color(0xFFD1D5DB) else Color(0xFF374151)
     val textColorTertiary = if (isDarkTheme) Color(0xFF9CA3AF) else Color(0xFF6B7280)
-    // Use grey text color when data is not available
     val countTextColor = if (used != null && limit != null) textColorPrimary else textColorTertiary
 
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -224,7 +223,7 @@ fun QuotaBar(
             // Progress bar container
             Box(
                 modifier = Modifier
-                    .width(availableWidth)
+                    .width(progressBarWidthTotal)
                     .height(8.dp)
                     .clip(RoundedCornerShape(4.dp))
                     .background(backgroundColor)
@@ -232,7 +231,7 @@ fun QuotaBar(
                 Box(
                     modifier = Modifier
                         .fillMaxHeight()
-                        .width(progressBarWidth.dp)
+                        .width(progressBarWidthUsedSoFar)
                         .background(barColor)
                         .clip(RoundedCornerShape(4.dp))
                 )
