@@ -190,6 +190,12 @@ fun QuotaBar(
     isDarkTheme: Boolean = isSystemInDarkTheme(),
     renewalText: String? = null
 ) {
+    // Calculate available width for bars by subtracting fixed elements
+    val totalWidth = LocalSize.current.width
+    val fixedElementsWidth = 64.dp + 8.dp + 56.dp // title + spacer + count
+    val availableWidth = totalWidth - fixedElementsWidth
+    val progressBarWidth = remember(totalWidth, progress) { (availableWidth * progress).toInt() }
+
     val textColorPrimary = if (isDarkTheme) Color(0xFFF3F4F6) else Color(0xFF1F2937)
     val textColorSecondary = if (isDarkTheme) Color(0xFFD1D5DB) else Color(0xFF374151)
     val textColorTertiary = if (isDarkTheme) Color(0xFF9CA3AF) else Color(0xFF6B7280)
@@ -218,7 +224,7 @@ fun QuotaBar(
             // Progress bar container
             Box(
                 modifier = Modifier
-                    .weight(1f)
+                    .width(availableWidth)
                     .height(8.dp)
                     .clip(RoundedCornerShape(4.dp))
                     .background(backgroundColor)
@@ -226,7 +232,7 @@ fun QuotaBar(
                 Box(
                     modifier = Modifier
                         .fillMaxHeight()
-                        .fillMaxWidth(progress)
+                        .width(progressBarWidth.dp)
                         .background(barColor)
                         .clip(RoundedCornerShape(4.dp))
                 )
