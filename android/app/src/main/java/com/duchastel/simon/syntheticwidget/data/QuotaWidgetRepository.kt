@@ -85,6 +85,26 @@ private val SUB_RENEWS_AT = stringPreferencesKey("sub_renews_at")
 private val TOOL_RENEWS_AT = stringPreferencesKey("tool_renews_at")
 private val IS_LOADING = booleanPreferencesKey("is_loading")
 private val IS_CLEAR_BACKGROUND = booleanPreferencesKey("is_clear_background")
+private val API_KEY_ID = stringPreferencesKey("api_key_id")
+
+suspend fun getWidgetApiKeyId(glanceWidgetId: GlanceId): String? {
+    val prefs = getAppWidgetState(
+        context = context,
+        definition = PreferencesGlanceStateDefinition,
+        glanceId = glanceWidgetId
+    )
+    return prefs[API_KEY_ID]
+}
+
+suspend fun setWidgetApiKeyId(glanceWidgetId: GlanceId, apiKeyId: String?) {
+    updateAppWidgetState(context, glanceWidgetId) { preferences ->
+        if (apiKeyId != null) {
+            preferences[API_KEY_ID] = apiKeyId
+        } else {
+            preferences -= API_KEY_ID
+        }
+    }
+}
 
 fun Preferences.toQuotaWidgetState(): QuotaWidgetState {
     // Required fields - if any are missing, we don't have valid quota data
@@ -108,5 +128,6 @@ fun Preferences.toQuotaWidgetState(): QuotaWidgetState {
         quotaData = quotaData,
         isLoading = this[IS_LOADING] ?: false,
         isClearBackground = this[IS_CLEAR_BACKGROUND] ?: false,
+        apiKeyId = this[API_KEY_ID],
     )
 }

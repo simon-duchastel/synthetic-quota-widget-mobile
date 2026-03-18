@@ -5,6 +5,7 @@ import androidx.glance.GlanceId
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.duchastel.simon.syntheticwidget.data.ApiKeyEntry
 import com.duchastel.simon.syntheticwidget.data.AuthRepository
 import com.duchastel.simon.syntheticwidget.data.QuotaWidgetRepository
 import com.duchastel.simon.syntheticwidget.widget.QuotaWidget
@@ -30,16 +31,16 @@ class MainViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context
 ) : ViewModel() {
 
-    private val _maskedApiKey = MutableStateFlow("")
-    val maskedApiKey: StateFlow<String> = _maskedApiKey.asStateFlow()
+    private val _apiKeys = MutableStateFlow<List<ApiKeyEntry>>(emptyList())
+    val apiKeys: StateFlow<List<ApiKeyEntry>> = _apiKeys.asStateFlow()
 
     private val _widgets = MutableStateFlow<List<WidgetInfo>>(emptyList())
     val widgets: StateFlow<List<WidgetInfo>> = _widgets.asStateFlow()
 
     init {
         viewModelScope.launch {
-            authRepository.getMaskedApiKey().collect { maskedKey ->
-                _maskedApiKey.value = maskedKey
+            authRepository.getApiKeysFlow().collect { keys ->
+                _apiKeys.value = keys
             }
         }
         loadWidgets()
@@ -69,12 +70,23 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun saveApiKey(apiKey: String) {
+    fun addApiKey(name: String, apiKey: String) {
         viewModelScope.launch {
-            authRepository.saveApiKey(apiKey)
-            authRepository.getMaskedApiKey().collect { maskedKey ->
-                _maskedApiKey.value = maskedKey
-            }
+            val entry = ApiKeyEntry(name = name, apiKey = apiKey)
+            authRepository.saveApiKey(entry)
+        }
+    }
+
+    fun deleteApiKey(id: String) {
+        viewModelScope.launch {
+            authRepository.deleteApiKey(id)
+        }
+    }
+
+    fun setWidgetApiKey(glanceId: GlanceId, apiKeyId: String?) {
+        viewModelScope.launch {
+            quotaWidgetRepository.setWidgetApiKeyId(glanceId, apiKeyId)
+            loadWidgets()
         }
     }
 
@@ -83,5 +95,10 @@ class MainViewModel @Inject constructor(
             quotaWidgetRepository.setClearBackground(glanceId, isClearBackground)
             loadWidgets()
         }
+    }
+
+    fun getApiKeyForWidget(widgetInfo: WidgetInfo): ApiKeyEntry? {
+        val apiKeyId = widgetInfo.state.apiKeyId ?: return null
+        return apiKeys.value.find { it.id == apiKeyId }
     }
 }
