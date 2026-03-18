@@ -262,16 +262,17 @@ fun SettingsScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp),
+                    .padding(vertical = 8.dp)
+                    .clickable {
+                        widgetInfo?.let { info ->
+                            viewModel.setClearBackground(info.glanceId, !info.state.isClearBackground)
+                        }
+                    },
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Checkbox(
                     checked = widgetInfo?.state?.isClearBackground ?: false,
-                    onCheckedChange = { isChecked ->
-                        widgetInfo?.let { info ->
-                            viewModel.setClearBackground(info.glanceId, isChecked)
-                        }
-                    }
+                    onCheckedChange = null
                 )
                 Text(
                     text = "Transparent background",
