@@ -75,6 +75,13 @@ class QuotaWidgetRepository @Inject constructor(
         }
         QuotaWidget().update(context, glanceWidgetId)
     }
+
+    suspend fun useDarkMode(glanceWidgetId: GlanceId, useDark: Boolean) {
+        updateAppWidgetState(context, glanceWidgetId) { preferences ->
+            preferences[USE_DARK_MODE] = useDark
+        }
+        QuotaWidget().update(context, glanceWidgetId)
+    }
 }
 
 private val SUB_LIMIT = intPreferencesKey("sub_limit")
@@ -87,26 +94,27 @@ private val IS_LOADING = booleanPreferencesKey("is_loading")
 private val IS_CLEAR_BACKGROUND = booleanPreferencesKey("is_clear_background")
 
 fun Preferences.toQuotaWidgetState(): QuotaWidgetState {
-    // Required fields - if any are missing, we don't have valid quota data
-    val subLimit = this[SUB_LIMIT]
-    val subRequests = this[SUB_REQUESTS]
-    val toolLimit = this[TOOL_LIMIT]
-    val toolRequests = this[TOOL_REQUESTS]
+        // Required fields - if any are missing, we don't have valid quota data
+        val subLimit = this[SUB_LIMIT]
+        val subRequests = this[SUB_REQUESTS]
+        val toolLimit = this[TOOL_LIMIT]
+        val toolRequests = this[TOOL_REQUESTS]
 
-    val quotaData = if (subLimit != null && subRequests != null && toolLimit != null && toolRequests != null) {
-        QuotaData(
-            subscriptionLimit = subLimit,
-            subscriptionRequests = subRequests,
-            toolLimit = toolLimit,
-            toolRequests = toolRequests,
-            subscriptionRenewsAt = this[SUB_RENEWS_AT],
-            toolRenewsAt = this[TOOL_RENEWS_AT],
+        val quotaData = if (subLimit != null && subRequests != null && toolLimit != null && toolRequests != null) {
+            QuotaData(
+                subscriptionLimit = subLimit,
+                subscriptionRequests = subRequests,
+                toolLimit = toolLimit,
+                toolRequests = toolRequests,
+                subscriptionRenewsAt = this[SUB_RENEWS_AT],
+                toolRenewsAt = this[TOOL_RENEWS_AT],
+            )
+        } else null
+
+        return QuotaWidgetState(
+            quotaData = quotaData,
+            isLoading = this[IS_LOADING] ?: false,
+            isClearBackground = this[IS_CLEAR_BACKGROUND] ?: false,
+            useDarkMode = this[USE_DARK_MODE] ?: false,
         )
-    } else null
-
-    return QuotaWidgetState(
-        quotaData = quotaData,
-        isLoading = this[IS_LOADING] ?: false,
-        isClearBackground = this[IS_CLEAR_BACKGROUND] ?: false,
-    )
-}
+    }

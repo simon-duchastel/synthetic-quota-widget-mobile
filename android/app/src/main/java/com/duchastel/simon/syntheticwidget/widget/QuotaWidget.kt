@@ -80,30 +80,22 @@ fun QuotaWidgetContent(quotaWidgetState: QuotaWidgetState) {
     } else 0f
 
     // Grey colors for uninitialized state
-    val greyBarColor = Color(0xFF9CA3AF)
-    val greyBackgroundColor = Color(0xFFE5E7EB)
+    val greyBarColor = if (quotaWidgetState.useDarkMode) {
+        Color(0xFF4B5563)
+    } else {
+        Color(0xFF9CA3AF)
+    }
+    val greyBackgroundColor = if (quotaWidgetState.useDarkMode) {
+        Color(0xFF1F2937)
+    } else {
+        Color(0xFFE5E7EB)
+    }
 
-    Box(
-        modifier = GlanceModifier
-            .fillMaxSize()
-            .background(if (isClearBackground) {
-                ColorProvider(
-                    day = Color.Transparent,
-                    night = Color.Transparent,
-                )
-            } else {
-                ColorProvider(
-                    day = Color(0xFFF5F5F5),
-                    night = Color(0xFF1A1A1A),
-                )
-            })
-            .padding(12.dp)
-    ) {
-        Column(
+Box(
             modifier = GlanceModifier.fillMaxSize(),
             horizontalAlignment = Alignment.Horizontal.Start
         ) {
-            // Subscription Quota Section (Purple theme, grey if uninitialized)
+            // Subscription Quota Section -- Purple theme, grey if uninitialized
             QuotaBar(
                 title = "Requests",
                 used = if (isInitialized) quotaData.subscriptionRequests else null,
@@ -149,33 +141,35 @@ fun QuotaWidgetContent(quotaWidgetState: QuotaWidgetState) {
                 ) {
                     if (quotaWidgetState.isLoading) {
                         // Show loading text
-                        Text(
-                            text = "Loading...",
-                            modifier = GlanceModifier.width(56.dp),
-                            style = TextStyle(
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Normal,
-                                color = ColorProvider(
-                                    day = Color(0xFF1F2937),
-                                    night = Color(0xFFF3F4F6)
+Text(
+                                text = "Loading...",
+                                modifier = GlanceModifier.width(56.dp),
+                                style = TextStyle(
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    color = if (quotaWidgetState.useDarkMode) {
+                                        Color(0xFFF3F4F6)
+                                    } else {
+                                        Color(0xFF6B7280)
+                                    }
                                 )
                             )
-                        )
                     } else {
                         // Show refresh button
-                        Image(
-                            provider = ImageProvider(R.drawable.ic_refresh),
-                            contentDescription = "Refresh",
-                            modifier = GlanceModifier
-                                .size(24.dp)
-                                .clickable(actionRunCallback<RefreshAction>()),
-                            colorFilter = ColorFilter.tint(
-                                ColorProvider(
-                                    day = Color(0xFF6B7280),
-                                    night = Color(0xFF9CA3AF)
+Image(
+                                provider = ImageProvider(R.drawable.ic_refresh),
+                                contentDescription = "Refresh",
+                                modifier = GlanceModifier
+                                    .size(24.dp)
+                                    .clickable(actionRunCallback<RefreshAction>()),
+                                colorFilter = ColorFilter.tint(
+                                    if (quotaWidgetState.useDarkMode) {
+                                        Color(0xFF9CA3AF)
+                                    } else {
+                                        Color(0xFF6B7280)
+                                    }
                                 )
                             )
-                        )
                     }
                 }
             }
@@ -194,10 +188,11 @@ fun QuotaWidgetContent(quotaWidgetState: QuotaWidgetState) {
                         .size(48.dp)
                         .clickable(actionRunCallback<RefreshAction>()),
                     colorFilter = ColorFilter.tint(
-                        ColorProvider(
-                            day = Color(0xFF6B7280),
-                            night = Color(0xFF9CA3AF)
-                        )
+                        if (quotaWidgetState.useDarkMode) {
+                            Color(0xFF9CA3AF)
+                        } else {
+                            Color(0xFF6B7280)
+                        }
                     )
                 )
             }
@@ -225,15 +220,17 @@ fun QuotaBar(
         (progressBarWidthTotal * progress)
     }
     val textColor = if (used != null && limit != null) {
-        ColorProvider(
-            day = Color(0xFF1F2937),
-            night = Color(0xFFF3F4F6)
-        )
+        if (quotaWidgetState.useDarkMode) {
+            Color(0xFFF3F4F6)
+        } else {
+            Color(0xFF1F2937)
+        }
     } else {
-        ColorProvider(
-            day = Color(0xFF9CA3AF),
-            night = Color(0xFF6B7280)
-        )
+        if (quotaWidgetState.useDarkMode) {
+            Color(0xFF6B7280)
+        } else {
+            Color(0xFF9CA3AF)
+        }
     }
 
     Column(modifier = GlanceModifier.fillMaxWidth()) {
@@ -243,18 +240,19 @@ fun QuotaBar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Title with fixed width for alignment
-            Text(
-                text = title,
-                modifier = GlanceModifier.width(leftRegionWidth),
-                style = TextStyle(
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = ColorProvider(
-                        day = Color(0xFF374151),
-                        night = Color(0xFFD1D5DB)
+Text(
+                    text = title,
+                    modifier = GlanceModifier.width(leftRegionWidth),
+                    style = TextStyle(
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = if (quotaWidgetState.useDarkMode) {
+                            Color(0xFFD1D5DB)
+                        } else {
+                            Color(0xFF374151)
+                        }
                     )
                 )
-            )
 
             Spacer(modifier = GlanceModifier.width(spacerWidth))
 
@@ -297,10 +295,11 @@ fun QuotaBar(
                 text = renewalText,
                 style = TextStyle(
                     fontSize = 11.sp,
-                    color = ColorProvider(
-                        day = Color(0xFF6B7280),
-                        night = Color(0xFF9CA3AF)
-                    )
+                    color = if (quotaWidgetState.useDarkMode) {
+                        Color(0xFF9CA3AF)
+                    } else {
+                        Color(0xFF6B7280)
+                    }
                 )
             )
         }
