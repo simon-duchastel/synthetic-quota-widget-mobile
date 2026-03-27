@@ -1,6 +1,7 @@
 package com.duchastel.simon.syntheticwidget.widget
 
 import android.content.Context
+import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
@@ -16,6 +17,7 @@ import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.LocalSize
 import androidx.glance.action.ActionParameters
+import androidx.glance.action.actionParametersOf
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetManager
@@ -23,6 +25,7 @@ import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.action.actionRunCallback
+import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
@@ -45,6 +48,7 @@ import androidx.glance.semantics.semantics
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
+import com.duchastel.simon.syntheticwidget.MainActivity
 import com.duchastel.simon.syntheticwidget.R
 import com.duchastel.simon.syntheticwidget.data.toQuotaWidgetState
 import com.duchastel.simon.syntheticwidget.utils.formatRenewalTime
@@ -55,17 +59,25 @@ class QuotaWidget : GlanceAppWidget() {
     override val sizeMode: SizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val appWidgetManager = GlanceAppWidgetManager(context)
+        val appWidgetId = appWidgetManager.getAppWidgetId(id)
         provideContent {
             GlanceTheme {
                 val quotaWidgetState = currentState<Preferences>().toQuotaWidgetState()
-                QuotaWidgetContent(quotaWidgetState)
+                QuotaWidgetContent(
+                    quotaWidgetState = quotaWidgetState,
+                    appWidgetId = appWidgetId
+                )
             }
         }
     }
 }
 
 @Composable
-fun QuotaWidgetContent(quotaWidgetState: QuotaWidgetState) {
+fun QuotaWidgetContent(
+    quotaWidgetState: QuotaWidgetState,
+    appWidgetId: Int
+) {
     val quotaData = quotaWidgetState.quotaData
     val isInitialized = quotaData != null
     val isClearBackground = quotaWidgetState.isClearBackground
@@ -97,6 +109,9 @@ fun QuotaWidgetContent(quotaWidgetState: QuotaWidgetState) {
                     night = Color(0xFF1A1A1A),
                 )
             })
+            .clickable(actionRunCallback<OpenWidgetAction>(
+                actionParametersOf(OpenWidgetAction.AppWidgetIdKey to appWidgetId)
+            ))
             .padding(12.dp)
     ) {
         Column(
@@ -319,6 +334,30 @@ class RefreshAction : ActionCallback {
         QuotaSyncWorker.runImmediately(context, appWidgetId)
     }
 }
+
+@OptIn(ExperimentalGlanceApi::class)
+class OpenWidgetAction : ActionCallback {
+    companion object {
+        val AppWidgetIdKey = ActionParameters.Key<Int>("app_widget_id")
+    }
+
+    override suspend fun onAction(
+        context: Context,
+        glanceId: GlanceId,
+        parameters: ActionParameters
+    ) {
+        val appWidgetId = parameters[AppWidgetIdKey] ?: return
+        val intent = Intent(context, MainActivity::class.java).apply {
+            action = ACTION_OPEN_WIDGET
+            putExtra(EXTRA_APP_WIDGET_ID, appWidgetId)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        context.startActivity(intent)
+    }
+}
+
+const val ACTION_OPEN_WIDGET = "com.duchastel.simon.syntheticwidget.action.OPEN_WIDGET"
+const val EXTRA_APP_WIDGET_ID = "extra_app_widget_id"
 
 class QuotaWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = QuotaWidget()

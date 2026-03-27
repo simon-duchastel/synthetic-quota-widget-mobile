@@ -1,5 +1,6 @@
 package com.duchastel.simon.syntheticwidget
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -40,6 +41,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,6 +59,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.duchastel.simon.syntheticwidget.ui.theme.SyntheticWidgetTheme
 import com.duchastel.simon.syntheticwidget.ui.widget.QuotaWidgetScreen
+import com.duchastel.simon.syntheticwidget.widget.ACTION_OPEN_WIDGET
+import com.duchastel.simon.syntheticwidget.widget.EXTRA_APP_WIDGET_ID
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -69,11 +73,25 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
 
+        // Check if we should navigate to a specific widget
+        val openWidgetId = intent.getIntExtra(EXTRA_APP_WIDGET_ID, -1)
+        val shouldOpenWidget = intent.action == ACTION_OPEN_WIDGET && openWidgetId != -1
+
         setContent {
             SyntheticWidgetTheme {
-                SyntheticWidgetApp(viewModel = viewModel)
+                SyntheticWidgetApp(
+                    viewModel = viewModel,
+                    initialWidgetId = if (shouldOpenWidget) openWidgetId else null
+                )
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        // The content will be recomposed with the new intent
+        recreate()
     }
 }
 
@@ -87,8 +105,16 @@ sealed class Screen(val route: String) {
 @Composable
 fun SyntheticWidgetApp(
     viewModel: MainViewModel = hiltViewModel(),
-    navController: NavHostController = rememberNavController()
+    navController: NavHostController = rememberNavController(),
+    initialWidgetId: Int? = null
 ) {
+    // Navigate to widget settings if initialWidgetId is provided
+    if (initialWidgetId != null) {
+        LaunchedEffect(initialWidgetId) {
+            navController.navigate(Screen.Settings.createRoute(initialWidgetId))
+        }
+    }
+
     NavHost(
         modifier = Modifier.windowInsetsPadding(WindowInsets.displayCutout),
         navController = navController,
