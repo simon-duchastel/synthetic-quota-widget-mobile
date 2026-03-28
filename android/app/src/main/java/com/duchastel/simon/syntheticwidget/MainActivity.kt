@@ -337,7 +337,8 @@ fun WidgetListItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
-            .height(IntrinsicSize.Min),
+            .height(IntrinsicSize.Min)
+            .clickable(onClick = onSettingsClick),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Card(
@@ -368,8 +369,7 @@ fun WidgetListItem(
 
         Box(
             modifier = Modifier
-                .fillMaxHeight()
-                .clickable(onClick = onSettingsClick),
+                .fillMaxHeight(),
             contentAlignment = Alignment.Center
         ) {
             Icon(
