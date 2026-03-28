@@ -93,6 +93,12 @@ class MainActivity : ComponentActivity() {
         // The content will be recomposed with the new intent
         recreate()
     }
+
+    override fun onResume() {
+        super.onResume()
+        // Refresh all widget data when the app comes to the foreground
+        viewModel.refreshAllWidgets()
+    }
 }
 
 sealed class Screen(val route: String) {
