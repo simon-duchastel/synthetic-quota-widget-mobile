@@ -75,6 +75,12 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    override fun onResume() {
+        super.onResume()
+        // Refresh all widget data when the app comes to the foreground
+        viewModel.refreshAllWidgets()
+    }
 }
 
 sealed class Screen(val route: String) {

@@ -69,6 +69,17 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    fun refreshAllWidgets() {
+        viewModelScope.launch {
+            val glanceManager = GlanceAppWidgetManager(context)
+            val glanceIds = glanceManager.getGlanceIds(QuotaWidget::class.java)
+            glanceIds.forEach { glanceId ->
+                quotaWidgetRepository.refreshData(glanceId)
+            }
+            loadWidgets()
+        }
+    }
+
     fun saveApiKey(apiKey: String) {
         viewModelScope.launch {
             authRepository.saveApiKey(apiKey)
