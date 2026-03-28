@@ -47,6 +47,7 @@ import androidx.glance.layout.width
 import androidx.glance.semantics.semantics
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
+import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import com.duchastel.simon.syntheticwidget.MainActivity
 import com.duchastel.simon.syntheticwidget.R
@@ -300,7 +301,8 @@ fun QuotaBar(
                 style = TextStyle(
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = textColor
+                    color = textColor,
+                    textAlign = TextAlign.End
                 )
             )
         }
