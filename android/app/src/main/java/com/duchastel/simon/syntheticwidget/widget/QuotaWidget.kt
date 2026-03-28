@@ -178,20 +178,24 @@ fun QuotaWidgetContent(
                             )
                         )
                     } else {
-                        // Show refresh button
-                        Image(
-                            provider = ImageProvider(R.drawable.ic_refresh),
-                            contentDescription = "Refresh",
+                        // Show refresh button with increased tap target
+                        Box(
                             modifier = GlanceModifier
-                                .size(24.dp)
-                                .clickable(actionRunCallback<RefreshAction>()),
-                            colorFilter = ColorFilter.tint(
-                                ColorProvider(
-                                    day = Color(0xFF6B7280),
-                                    night = Color(0xFF9CA3AF)
+                                .clickable(actionRunCallback<RefreshAction>())
+                                .padding(12.dp)
+                        ) {
+                            Image(
+                                provider = ImageProvider(R.drawable.ic_refresh),
+                                contentDescription = "Refresh",
+                                modifier = GlanceModifier.size(24.dp),
+                                colorFilter = ColorFilter.tint(
+                                    ColorProvider(
+                                        day = Color(0xFF6B7280),
+                                        night = Color(0xFF9CA3AF)
+                                    )
                                 )
                             )
-                        )
+                        }
                     }
                 }
             }

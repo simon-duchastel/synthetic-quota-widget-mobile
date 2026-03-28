@@ -145,15 +145,19 @@ fun QuotaWidgetContent(
                             )
                         )
                     } else {
-                        // Show refresh button
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_refresh),
-                            contentDescription = "Refresh",
+                        // Show refresh button with increased tap target
+                        Box(
                             modifier = Modifier
-                                .size(24.dp)
-                                .clickable { onRefreshClick() },
-                            tint = textColorTertiary
-                        )
+                                .clickable { onRefreshClick() }
+                                .padding(12.dp)
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_refresh),
+                                contentDescription = "Refresh",
+                                modifier = Modifier.size(24.dp),
+                                tint = textColorTertiary
+                            )
+                        }
                     }
                 }
             }
