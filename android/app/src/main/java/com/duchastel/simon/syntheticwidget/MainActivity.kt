@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -49,6 +48,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -165,7 +165,7 @@ fun WidgetListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Synthetic Widget") }
+                title = { Text(stringResource(R.string.app_title)) }
             )
         }
     ) { paddingValues ->
@@ -177,14 +177,14 @@ fun WidgetListScreen(
         ) {
             item {
                 Text(
-                    text = "API Key Configuration",
+                    text = stringResource(R.string.api_key_configuration),
                     style = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
                 if (maskedApiKey.isNotEmpty()) {
                     Text(
-                        text = "Current API Key: $maskedApiKey",
+                        text = stringResource(R.string.current_api_key, maskedApiKey),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
@@ -193,8 +193,8 @@ fun WidgetListScreen(
                 OutlinedTextField(
                     value = apiKeyInput,
                     onValueChange = { apiKeyInput = it },
-                    label = { Text("Enter Synthetic API Key") },
-                    placeholder = { Text("syn_...") },
+                    label = { Text(stringResource(R.string.enter_api_key_label)) },
+                    placeholder = { Text(stringResource(R.string.api_key_placeholder)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -209,13 +209,13 @@ fun WidgetListScreen(
                         .padding(top = 16.dp),
                     enabled = apiKeyInput.isNotBlank()
                 ) {
-                    Text("Save API Key")
+                    Text(stringResource(R.string.save_api_key))
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Text(
-                    text = "Your Widgets",
+                    text = stringResource(R.string.your_widgets),
                     style = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
@@ -248,12 +248,12 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Widget Settings") },
+                title = { Text(stringResource(R.string.widget_settings)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.navigate_back)
                         )
                     }
                 }
@@ -295,7 +295,7 @@ fun SettingsScreen(
 
             // Settings content
             Text(
-                text = "Settings",
+                text = stringResource(R.string.settings),
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
@@ -317,7 +317,7 @@ fun SettingsScreen(
                     onCheckedChange = null
                 )
                 Text(
-                    text = "Transparent background",
+                    text = stringResource(R.string.transparent_background),
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(start = 8.dp)
                 )
@@ -358,7 +358,7 @@ fun WidgetListItem(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "current api key: $maskedApiKey",
+                    text = stringResource(R.string.current_api_key_placeholder, maskedApiKey),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -374,7 +374,7 @@ fun WidgetListItem(
         ) {
             Icon(
                 imageVector = Icons.Default.Settings,
-                contentDescription = "Settings",
+                contentDescription = stringResource(R.string.widget_settings_description),
                 tint = MaterialTheme.colorScheme.onSurface
             )
         }
