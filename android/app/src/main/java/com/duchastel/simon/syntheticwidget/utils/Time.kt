@@ -1,10 +1,12 @@
 package com.duchastel.simon.syntheticwidget.utils
 
+import android.content.Context
+import com.duchastel.simon.syntheticwidget.R
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeParseException
 
-fun formatRenewalTime(isoTimestamp: String?): String? {
+fun formatRenewalTime(context: Context, isoTimestamp: String?): String? {
     if (isoTimestamp == null || isoTimestamp == "Never!") return null
 
     return try {
@@ -19,7 +21,8 @@ fun formatRenewalTime(isoTimestamp: String?): String? {
             else -> hour
         }
         val minuteStr = if (minute < 10) "0$minute" else "$minute"
-        "Renews at $displayHour:$minuteStr$amPm"
+        val timeStr = "$displayHour:$minuteStr$amPm"
+        context.getString(R.string.renews_at, timeStr)
     } catch (_: DateTimeParseException) {
         null
     }

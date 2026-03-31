@@ -15,6 +15,7 @@ import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.Image
 import androidx.glance.ImageProvider
+import androidx.glance.LocalContext
 import androidx.glance.LocalSize
 import androidx.glance.action.ActionParameters
 import androidx.glance.action.actionParametersOf
@@ -25,7 +26,6 @@ import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.action.actionRunCallback
-import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
@@ -36,7 +36,6 @@ import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
-import androidx.glance.layout.collectPadding
 import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
@@ -44,7 +43,6 @@ import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
 import androidx.glance.layout.width
-import androidx.glance.semantics.semantics
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
@@ -79,6 +77,7 @@ fun QuotaWidgetContent(
     quotaWidgetState: QuotaWidgetState,
     appWidgetId: Int
 ) {
+    val context = LocalContext.current
     val quotaData = quotaWidgetState.quotaData
     val isInitialized = quotaData != null
     val isClearBackground = quotaWidgetState.isClearBackground
@@ -121,7 +120,7 @@ fun QuotaWidgetContent(
         ) {
             // Subscription Quota Section (Purple theme, grey if uninitialized)
             QuotaBar(
-                title = "Requests",
+                title = context.getString(R.string.requests_title),
                 used = if (isInitialized) quotaData.subscriptionRequests else null,
                 limit = if (isInitialized) quotaData.subscriptionLimit else null,
                 progress = subscriptionProgress,
@@ -129,10 +128,10 @@ fun QuotaWidgetContent(
                 backgroundColor = if (isInitialized) Color(0xFFA5B4FC) else greyBackgroundColor,
                 renewalText = if (isInitialized) {
                     if (quotaData.subscriptionRequests == 0) {
-                        "No requests used"
+                        context.getString(R.string.no_requests_used)
                     } else {
                         remember(quotaWidgetState.quotaData.subscriptionRenewsAt) {
-                            formatRenewalTime(quotaWidgetState.quotaData.subscriptionRenewsAt)
+                            formatRenewalTime(context, quotaWidgetState.quotaData.subscriptionRenewsAt)
                         }
                     }
                 } else {
@@ -144,7 +143,7 @@ fun QuotaWidgetContent(
 
             // Tools Section (Green theme, grey if uninitialized)
             QuotaBar(
-                title = "Tools",
+                title = context.getString(R.string.tools_title),
                 used = if (isInitialized) quotaData.toolRequests else null,
                 limit = if (isInitialized) quotaData.toolLimit else null,
                 progress = toolProgress,
@@ -152,10 +151,10 @@ fun QuotaWidgetContent(
                 backgroundColor = if (isInitialized) Color(0xFFA7F3D0) else greyBackgroundColor,
                 renewalText = if (isInitialized) {
                     if (quotaData.toolRequests == 0) {
-                        "No requests used"
+                        context.getString(R.string.no_requests_used)
                     } else {
                         remember(quotaWidgetState.quotaData.toolRenewsAt) {
-                            formatRenewalTime(quotaWidgetState.quotaData.toolRenewsAt)
+                            formatRenewalTime(context, quotaWidgetState.quotaData.toolRenewsAt)
                         }
                     }
                 } else {
@@ -174,7 +173,7 @@ fun QuotaWidgetContent(
                     if (quotaWidgetState.isLoading) {
                         // Show loading text
                         Text(
-                            text = "Loading...",
+                            text = context.getString(R.string.loading),
                             modifier = GlanceModifier.width(56.dp),
                             style = TextStyle(
                                 fontSize = 12.sp,
@@ -194,7 +193,7 @@ fun QuotaWidgetContent(
                         ) {
                             Image(
                                 provider = ImageProvider(R.drawable.ic_refresh),
-                                contentDescription = "Refresh",
+                                contentDescription = context.getString(R.string.refresh),
                                 modifier = GlanceModifier.size(24.dp),
                                 colorFilter = ColorFilter.tint(
                                     ColorProvider(
@@ -217,7 +216,7 @@ fun QuotaWidgetContent(
             ) {
                 Image(
                     provider = ImageProvider(R.drawable.ic_refresh),
-                    contentDescription = "Load data",
+                    contentDescription = context.getString(R.string.load_data),
                     modifier = GlanceModifier
                         .size(48.dp)
                         .clickable(actionRunCallback<RefreshAction>()),
@@ -243,6 +242,7 @@ fun QuotaBar(
     backgroundColor: Color,
     renewalText: String? = null
 ) {
+    val context = LocalContext.current
     val totalWidth = LocalSize.current.width
     val leftRegionWidth = 64.dp
     val rightRegionWidth = 80.dp
@@ -306,7 +306,11 @@ fun QuotaBar(
             Spacer(modifier = GlanceModifier.width(spacerWidth))
 
             // Count display with fixed width for alignment - show ?/? when null
-            val countText = if (used != null && limit != null) "$used/$limit" else "?/?"
+            val countText = if (used != null && limit != null) {
+                context.getString(R.string.count_format, used, limit)
+            } else {
+                context.getString(R.string.unknown_count)
+            }
             Text(
                 text = countText,
                 modifier = GlanceModifier.width(rightRegionWidth),

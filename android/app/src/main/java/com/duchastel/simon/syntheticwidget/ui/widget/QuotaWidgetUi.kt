@@ -1,5 +1,6 @@
 package com.duchastel.simon.syntheticwidget.ui.widget
 
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -23,7 +24,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -53,6 +56,7 @@ fun QuotaWidgetContent(
     isDarkTheme: Boolean = isSystemInDarkTheme(),
     onRefreshClick: () -> Unit = {}
 ) {
+    val context = LocalContext.current
     val quotaData = quotaWidgetState.quotaData
     val isInitialized = quotaData != null
     val isClearBackground = quotaWidgetState.isClearBackground
@@ -91,7 +95,7 @@ fun QuotaWidgetContent(
         ) {
             // Subscription Quota Section (Purple theme, grey if uninitialized)
             QuotaBar(
-                title = "Requests",
+                title = stringResource(R.string.requests_title),
                 used = if (isInitialized) quotaData.subscriptionRequests else null,
                 limit = if (isInitialized) quotaData.subscriptionLimit else null,
                 progress = subscriptionProgress,
@@ -100,10 +104,10 @@ fun QuotaWidgetContent(
                 isDarkTheme = isDarkTheme,
                 renewalText = if (isInitialized) {
                     if (quotaData.subscriptionRequests == 0) {
-                        "No requests used"
+                        stringResource(R.string.no_requests_used)
                     } else {
                         remember(quotaWidgetState.quotaData.subscriptionRenewsAt) {
-                            formatRenewalTime(quotaWidgetState.quotaData.subscriptionRenewsAt)
+                            formatRenewalTime(context, quotaWidgetState.quotaData.subscriptionRenewsAt)
                         }
                     }
                 } else {
@@ -115,7 +119,7 @@ fun QuotaWidgetContent(
 
             // Tools Section (Green theme, grey if uninitialized)
             QuotaBar(
-                title = "Tools",
+                title = stringResource(R.string.tools_title),
                 used = if (isInitialized) quotaData.toolRequests else null,
                 limit = if (isInitialized) quotaData.toolLimit else null,
                 progress = toolProgress,
@@ -124,10 +128,10 @@ fun QuotaWidgetContent(
                 isDarkTheme = isDarkTheme,
                 renewalText = if (isInitialized) {
                     if (quotaData.toolRequests == 0) {
-                        "No requests used"
+                        stringResource(R.string.no_requests_used)
                     } else {
                         remember(quotaWidgetState.quotaData.toolRenewsAt) {
-                            formatRenewalTime(quotaWidgetState.quotaData.toolRenewsAt)
+                            formatRenewalTime(context, quotaWidgetState.quotaData.toolRenewsAt)
                         }
                     }
                 } else {
@@ -146,7 +150,7 @@ fun QuotaWidgetContent(
                     if (quotaWidgetState.isLoading) {
                         // Show loading text
                         Text(
-                            text = "Loading...",
+                            text = stringResource(R.string.loading),
                             modifier = Modifier.width(56.dp),
                             style = TextStyle(
                                 fontSize = 12.sp,
@@ -163,7 +167,7 @@ fun QuotaWidgetContent(
                         ) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_refresh),
-                                contentDescription = "Refresh",
+                                contentDescription = stringResource(R.string.refresh),
                                 modifier = Modifier.size(24.dp),
                                 tint = textColorTertiary
                             )
@@ -181,7 +185,7 @@ fun QuotaWidgetContent(
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_refresh),
-                    contentDescription = "Load data",
+                    contentDescription = stringResource(R.string.load_data),
                     modifier = Modifier
                         .size(48.dp)
                         .clickable { onRefreshClick() },
@@ -247,7 +251,11 @@ fun QuotaBar(
             Spacer(modifier = Modifier.width(8.dp))
 
             // Count display with fixed width for alignment - show ?/? when null
-            val countText = if (used != null && limit != null) "$used/$limit" else "?/?"
+            val countText = if (used != null && limit != null) {
+                stringResource(R.string.count_format, used, limit)
+            } else {
+                stringResource(R.string.unknown_count)
+            }
             Text(
                 text = countText,
                 modifier = Modifier.width(56.dp),
