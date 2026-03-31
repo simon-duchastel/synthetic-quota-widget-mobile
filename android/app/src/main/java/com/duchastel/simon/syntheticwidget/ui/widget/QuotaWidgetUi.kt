@@ -99,8 +99,12 @@ fun QuotaWidgetContent(
                 backgroundColor = if (isInitialized) Color(0xFFA5B4FC) else greyBackgroundColor,
                 isDarkTheme = isDarkTheme,
                 renewalText = if (isInitialized) {
-                    remember(quotaWidgetState.quotaData.subscriptionRenewsAt) {
-                        formatRenewalTime(quotaWidgetState.quotaData.subscriptionRenewsAt)
+                    if (quotaData.subscriptionRequests == 0) {
+                        "No requests used"
+                    } else {
+                        remember(quotaWidgetState.quotaData.subscriptionRenewsAt) {
+                            formatRenewalTime(quotaWidgetState.quotaData.subscriptionRenewsAt)
+                        }
                     }
                 } else {
                     ""
@@ -118,8 +122,14 @@ fun QuotaWidgetContent(
                 barColor = if (isInitialized) Color(0xFF10B981) else greyBarColor,
                 backgroundColor = if (isInitialized) Color(0xFFA7F3D0) else greyBackgroundColor,
                 isDarkTheme = isDarkTheme,
-                renewalText = if (isInitialized) remember(quotaWidgetState.quotaData.toolRenewsAt) {
-                    formatRenewalTime(quotaWidgetState.quotaData.toolRenewsAt)
+                renewalText = if (isInitialized) {
+                    if (quotaData.toolRequests == 0) {
+                        "No requests used"
+                    } else {
+                        remember(quotaWidgetState.quotaData.toolRenewsAt) {
+                            formatRenewalTime(quotaWidgetState.quotaData.toolRenewsAt)
+                        }
+                    }
                 } else {
                     ""
                 }
