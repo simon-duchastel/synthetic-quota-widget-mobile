@@ -245,7 +245,7 @@ fun QuotaBar(
     val context = LocalContext.current
     val totalWidth = LocalSize.current.width
     val leftRegionWidth = 64.dp
-    val rightRegionWidth = 80.dp
+    val rightRegionWidth = 56.dp
     val spacerWidth = 8.dp
     val nonProgressBarWidth = leftRegionWidth + (spacerWidth * 2) + rightRegionWidth
     val progressBarWidthTotal = totalWidth - nonProgressBarWidth
