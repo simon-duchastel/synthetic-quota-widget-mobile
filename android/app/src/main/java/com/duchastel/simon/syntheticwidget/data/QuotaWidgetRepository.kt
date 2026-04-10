@@ -3,6 +3,7 @@ package com.duchastel.simon.syntheticwidget.data
 import android.content.Context
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.glance.GlanceId
@@ -38,19 +39,24 @@ class QuotaWidgetRepository @Inject constructor(
 
             updateAppWidgetState(context, glanceWidgetId) { preferences ->
                 preferences[IS_LOADING] = false
-                preferences[SUB_LIMIT] = quotaResponse.subscription.limit
-                preferences[SUB_REQUESTS] = quotaResponse.subscription.requests
-                preferences[TOOL_LIMIT] = quotaResponse.freeToolCalls.limit
-                preferences[TOOL_REQUESTS] = quotaResponse.freeToolCalls.requests
-                if (quotaResponse.subscription.renewsAt != null) {
-                    preferences[SUB_RENEWS_AT] = quotaResponse.subscription.renewsAt
+                // Five-hour limit data
+                preferences[FIVE_HOUR_MAX] = quotaResponse.rollingFiveHourLimit.max
+                preferences[FIVE_HOUR_REMAINING] = quotaResponse.rollingFiveHourLimit.remaining
+                preferences[FIVE_HOUR_TICK_PERCENT] = quotaResponse.rollingFiveHourLimit.tickPercent
+                if (quotaResponse.rollingFiveHourLimit.nextTickAt != null) {
+                    preferences[FIVE_HOUR_NEXT_TICK_AT] = quotaResponse.rollingFiveHourLimit.nextTickAt
                 } else {
-                    preferences -= SUB_RENEWS_AT
+                    preferences -= FIVE_HOUR_NEXT_TICK_AT
                 }
-                if (quotaResponse.freeToolCalls.renewsAt != null) {
-                    preferences[TOOL_RENEWS_AT] = quotaResponse.freeToolCalls.renewsAt
+                // Weekly token limit data
+                preferences[WEEKLY_MAX_CREDITS] = quotaResponse.weeklyTokenLimit.maxCredits
+                preferences[WEEKLY_REMAINING_CREDITS] = quotaResponse.weeklyTokenLimit.remainingCredits
+                preferences[WEEKLY_NEXT_REGEN_CREDITS] = quotaResponse.weeklyTokenLimit.nextRegenCredits
+                preferences[WEEKLY_PERCENT_REMAINING] = quotaResponse.weeklyTokenLimit.percentRemaining
+                if (quotaResponse.weeklyTokenLimit.nextRegenAt != null) {
+                    preferences[WEEKLY_NEXT_REGEN_AT] = quotaResponse.weeklyTokenLimit.nextRegenAt
                 } else {
-                    preferences -= TOOL_RENEWS_AT
+                    preferences -= WEEKLY_NEXT_REGEN_AT
                 }
             }
             QuotaWidget().update(context, glanceWidgetId)
@@ -77,30 +83,47 @@ class QuotaWidgetRepository @Inject constructor(
     }
 }
 
-private val SUB_LIMIT = intPreferencesKey("sub_limit")
-private val SUB_REQUESTS = intPreferencesKey("sub_requests")
-private val TOOL_LIMIT = intPreferencesKey("tool_limit")
-private val TOOL_REQUESTS = intPreferencesKey("tool_requests")
-private val SUB_RENEWS_AT = stringPreferencesKey("sub_renews_at")
-private val TOOL_RENEWS_AT = stringPreferencesKey("tool_renews_at")
+// Five-hour limit keys
+private val FIVE_HOUR_MAX = intPreferencesKey("five_hour_max")
+private val FIVE_HOUR_REMAINING = intPreferencesKey("five_hour_remaining")
+private val FIVE_HOUR_TICK_PERCENT = doublePreferencesKey("five_hour_tick_percent")
+private val FIVE_HOUR_NEXT_TICK_AT = stringPreferencesKey("five_hour_next_tick_at")
+
+// Weekly token limit keys
+private val WEEKLY_MAX_CREDITS = stringPreferencesKey("weekly_max_credits")
+private val WEEKLY_REMAINING_CREDITS = stringPreferencesKey("weekly_remaining_credits")
+private val WEEKLY_NEXT_REGEN_CREDITS = stringPreferencesKey("weekly_next_regen_credits")
+private val WEEKLY_PERCENT_REMAINING = doublePreferencesKey("weekly_percent_remaining")
+private val WEEKLY_NEXT_REGEN_AT = stringPreferencesKey("weekly_next_regen_at")
+
+// Other keys
 private val IS_LOADING = booleanPreferencesKey("is_loading")
 private val IS_CLEAR_BACKGROUND = booleanPreferencesKey("is_clear_background")
 
 fun Preferences.toQuotaWidgetState(): QuotaWidgetState {
-    // Required fields - if any are missing, we don't have valid quota data
-    val subLimit = this[SUB_LIMIT]
-    val subRequests = this[SUB_REQUESTS]
-    val toolLimit = this[TOOL_LIMIT]
-    val toolRequests = this[TOOL_REQUESTS]
+    // Required fields for five-hour limit
+    val fiveHourMax = this[FIVE_HOUR_MAX]
+    val fiveHourRemaining = this[FIVE_HOUR_REMAINING]
+    val fiveHourTickPercent = this[FIVE_HOUR_TICK_PERCENT]
 
-    val quotaData = if (subLimit != null && subRequests != null && toolLimit != null && toolRequests != null) {
+    // Required fields for weekly limit
+    val weeklyMaxCredits = this[WEEKLY_MAX_CREDITS]
+    val weeklyRemainingCredits = this[WEEKLY_REMAINING_CREDITS]
+    val weeklyNextRegenCredits = this[WEEKLY_NEXT_REGEN_CREDITS]
+    val weeklyPercentRemaining = this[WEEKLY_PERCENT_REMAINING]
+
+    val quotaData = if (fiveHourMax != null && fiveHourRemaining != null && fiveHourTickPercent != null &&
+        weeklyMaxCredits != null && weeklyRemainingCredits != null && weeklyNextRegenCredits != null && weeklyPercentRemaining != null) {
         QuotaData(
-            subscriptionLimit = subLimit,
-            subscriptionRequests = subRequests,
-            toolLimit = toolLimit,
-            toolRequests = toolRequests,
-            subscriptionRenewsAt = this[SUB_RENEWS_AT],
-            toolRenewsAt = this[TOOL_RENEWS_AT],
+            fiveHourLimitMax = fiveHourMax,
+            fiveHourLimitRemaining = fiveHourRemaining,
+            fiveHourLimitTickPercent = fiveHourTickPercent,
+            fiveHourLimitNextTickAt = this[FIVE_HOUR_NEXT_TICK_AT],
+            weeklyCreditsMax = weeklyMaxCredits,
+            weeklyCreditsRemaining = weeklyRemainingCredits,
+            weeklyCreditsNextRegen = weeklyNextRegenCredits,
+            weeklyCreditsPercentRemaining = weeklyPercentRemaining,
+            weeklyCreditsNextRegenAt = this[WEEKLY_NEXT_REGEN_AT],
         )
     } else null
 

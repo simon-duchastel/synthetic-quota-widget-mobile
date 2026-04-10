@@ -50,7 +50,7 @@ import androidx.glance.text.TextStyle
 import com.duchastel.simon.syntheticwidget.MainActivity
 import com.duchastel.simon.syntheticwidget.R
 import com.duchastel.simon.syntheticwidget.data.toQuotaWidgetState
-import com.duchastel.simon.syntheticwidget.utils.formatRenewalTime
+import com.duchastel.simon.syntheticwidget.utils.formatTimeUntil
 import com.duchastel.simon.syntheticwidget.worker.QuotaSyncWorker
 
 class QuotaWidget : GlanceAppWidget() {
@@ -83,12 +83,12 @@ fun QuotaWidgetContent(
     val isClearBackground = quotaWidgetState.isClearBackground
 
     // Compute derived values - use 0 if not initialized
-    val subscriptionProgress = if (isInitialized) {
-        quotaData.subscriptionProgress
+    val fiveHourProgress = if (isInitialized) {
+        quotaData.fiveHourLimitProgress
     } else 0f
 
-    val toolProgress = if (isInitialized) {
-        quotaData.toolProgress
+    val weeklyProgress = if (isInitialized) {
+        quotaData.weeklyCreditsProgress
     } else 0f
 
     // Grey colors for uninitialized state
@@ -118,21 +118,23 @@ fun QuotaWidgetContent(
             modifier = GlanceModifier.fillMaxSize(),
             horizontalAlignment = Alignment.Horizontal.Start
         ) {
-            // Subscription Quota Section (Purple theme, grey if uninitialized)
+            // Five-Hour Limit Section (Green theme, grey if uninitialized)
+            // Shows: "Remaining five-hour requests: <progress bar> XX.X%"
+            // and "Regenerates X% (X requests) in X minutes"
             QuotaBar(
-                title = context.getString(R.string.requests_title),
-                used = if (isInitialized) quotaData.subscriptionRequests else null,
-                limit = if (isInitialized) quotaData.subscriptionLimit else null,
-                progress = subscriptionProgress,
-                barColor = if (isInitialized) Color(0xFF6366F1) else greyBarColor,
-                backgroundColor = if (isInitialized) Color(0xFFA5B4FC) else greyBackgroundColor,
+                title = context.getString(R.string.five_hour_title),
+                percent = if (isInitialized) quotaData.fiveHourLimitPercent else null,
+                progress = fiveHourProgress,
+                barColor = if (isInitialized) Color(0xFF10B981) else greyBarColor,
+                backgroundColor = if (isInitialized) Color(0xFFA7F3D0) else greyBackgroundColor,
                 renewalText = if (isInitialized) {
-                    if (quotaData.subscriptionRequests == 0) {
-                        context.getString(R.string.no_requests_used)
+                    val timeUntil = formatTimeUntil(quotaData.fiveHourLimitNextTickAt)
+                    if (timeUntil != null) {
+                        val tickPercent = (quotaData.fiveHourLimitTickPercent * 100).toInt()
+                        val tickAmount = (quotaData.fiveHourLimitMax * quotaData.fiveHourLimitTickPercent).toInt()
+                        "Regenerates $tickPercent% (${tickAmount} requests) in $timeUntil"
                     } else {
-                        remember(quotaWidgetState.quotaData.subscriptionRenewsAt) {
-                            formatRenewalTime(context, quotaWidgetState.quotaData.subscriptionRenewsAt)
-                        }
+                        ""
                     }
                 } else {
                     ""
@@ -141,21 +143,25 @@ fun QuotaWidgetContent(
 
             Spacer(modifier = GlanceModifier.height(8.dp))
 
-            // Tools Section (Green theme, grey if uninitialized)
+            // Weekly Credits Section (Blue theme, grey if uninitialized)
+            // Shows: "Remaining weekly credits: <progress bar> XX.X%"
+            // and "Regenerates X% ($X.XX) in X minutes/hours"
             QuotaBar(
-                title = context.getString(R.string.tools_title),
-                used = if (isInitialized) quotaData.toolRequests else null,
-                limit = if (isInitialized) quotaData.toolLimit else null,
-                progress = toolProgress,
-                barColor = if (isInitialized) Color(0xFF10B981) else greyBarColor,
-                backgroundColor = if (isInitialized) Color(0xFFA7F3D0) else greyBackgroundColor,
+                title = context.getString(R.string.weekly_title),
+                percent = if (isInitialized) quotaData.weeklyCreditsPercentRemaining.toFloat() else null,
+                progress = weeklyProgress,
+                barColor = if (isInitialized) Color(0xFF3B82F6) else greyBarColor,
+                backgroundColor = if (isInitialized) Color(0xFF93C5FD) else greyBackgroundColor,
                 renewalText = if (isInitialized) {
-                    if (quotaData.toolRequests == 0) {
-                        context.getString(R.string.no_requests_used)
+                    val timeUntil = formatTimeUntil(quotaData.weeklyCreditsNextRegenAt)
+                    if (timeUntil != null) {
+                        // Calculate regen percent based on nextRegenCredits / maxCredits
+                        val maxCreditsValue = quotaData.weeklyCreditsMax.replace("$", "").toDoubleOrNull() ?: 0.0
+                        val nextRegenValue = quotaData.weeklyCreditsNextRegen.replace("$", "").toDoubleOrNull() ?: 0.0
+                        val regenPercent = if (maxCreditsValue > 0) (nextRegenValue / maxCreditsValue * 100).toInt() else 0
+                        "Regenerates $regenPercent% (${quotaData.weeklyCreditsNextRegen}) in $timeUntil"
                     } else {
-                        remember(quotaWidgetState.quotaData.toolRenewsAt) {
-                            formatRenewalTime(context, quotaWidgetState.quotaData.toolRenewsAt)
-                        }
+                        ""
                     }
                 } else {
                     ""
@@ -235,8 +241,7 @@ fun QuotaWidgetContent(
 @Composable
 fun QuotaBar(
     title: String,
-    used: Int?,
-    limit: Int?,
+    percent: Float?,
     progress: Float,
     barColor: Color,
     backgroundColor: Color,
@@ -253,7 +258,7 @@ fun QuotaBar(
     val progressBarWidthUsedSoFar = remember(totalWidth, progress) {
         (progressBarWidthTotal * progress)
     }
-    val textColor = if (used != null && limit != null) {
+    val textColor = if (percent != null) {
         ColorProvider(
             day = Color(0xFF1F2937),
             night = Color(0xFFF3F4F6)
@@ -266,7 +271,7 @@ fun QuotaBar(
     }
 
     Column(modifier = GlanceModifier.fillMaxWidth()) {
-        // Title row with count
+        // Title row with percent
         Row(
             modifier = GlanceModifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -306,14 +311,14 @@ fun QuotaBar(
 
             Spacer(modifier = GlanceModifier.width(spacerWidth))
 
-            // Count display with fixed width for alignment - show ?/? when null
-            val countText = if (used != null && limit != null) {
-                context.getString(R.string.count_format, used, limit)
+            // Percent display with fixed width for alignment - show ?.?% when null
+            val percentText = if (percent != null) {
+                context.getString(R.string.percent_format, percent)
             } else {
-                context.getString(R.string.unknown_count)
+                "?%"
             }
             Text(
-                text = countText,
+                text = percentText,
                 modifier = GlanceModifier.width(rightRegionWidth),
                 style = TextStyle(
                     fontSize = 14.sp,
