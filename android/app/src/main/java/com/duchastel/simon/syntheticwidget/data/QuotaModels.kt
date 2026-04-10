@@ -5,18 +5,36 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class QuotaResponse(
-    @SerialName("subscription")
-    val subscription: QuotaDetail,
-    @SerialName("freeToolCalls")
-    val freeToolCalls: QuotaDetail,
+    @SerialName("rollingFiveHourLimit")
+    val rollingFiveHourLimit: RollingFiveHourLimit,
+    @SerialName("weeklyTokenLimit")
+    val weeklyTokenLimit: WeeklyTokenLimit,
 )
 
 @Serializable
-data class QuotaDetail(
-    @SerialName("limit")
-    val limit: Int,
-    @SerialName("requests")
-    val requests: Int,
-    @SerialName("renewsAt")
-    val renewsAt: String? = null
+data class RollingFiveHourLimit(
+    @SerialName("nextTickAt")
+    val nextTickAt: String? = null,
+    @SerialName("tickPercent")
+    val tickPercent: Double,
+    @SerialName("remaining")
+    val remaining: Int,
+    @SerialName("max")
+    val max: Int,
+    @SerialName("limited")
+    val limited: Boolean,
+)
+
+@Serializable
+data class WeeklyTokenLimit(
+    @SerialName("nextRegenAt")
+    val nextRegenAt: String? = null,
+    @SerialName("percentRemaining")
+    val percentRemaining: Double,
+    @SerialName("maxCredits")
+    val maxCredits: String,
+    @SerialName("remainingCredits")
+    val remainingCredits: String,
+    @SerialName("nextRegenCredits")
+    val nextRegenCredits: String,
 )

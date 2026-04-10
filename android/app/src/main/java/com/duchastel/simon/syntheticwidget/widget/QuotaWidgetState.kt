@@ -4,24 +4,29 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class QuotaData(
-    val subscriptionLimit: Int,
-    val subscriptionRequests: Int,
-    val toolLimit: Int,
-    val toolRequests: Int,
-    val subscriptionRenewsAt: String? = null,
-    val toolRenewsAt: String? = null,
+    // Five-hour limit data
+    val fiveHourLimitMax: Int,
+    val fiveHourLimitRemaining: Int,
+    val fiveHourLimitTickPercent: Double,
+    val fiveHourLimitNextTickAt: String? = null,
+    // Weekly token limit data
+    val weeklyCreditsMax: String,
+    val weeklyCreditsRemaining: String,
+    val weeklyCreditsNextRegen: String,
+    val weeklyCreditsPercentRemaining: Double,
+    val weeklyCreditsNextRegenAt: String? = null,
 ) {
-    val subscriptionRemaining: Int
-        get() = subscriptionLimit - subscriptionRequests
+    val fiveHourLimitUsed: Int
+        get() = fiveHourLimitMax - fiveHourLimitRemaining
 
-    val toolRemaining: Int
-        get() = toolLimit - toolRequests
+    val fiveHourLimitProgress: Float
+        get() = if (fiveHourLimitMax > 0) fiveHourLimitRemaining.toFloat() / fiveHourLimitMax.toFloat() else 0f
 
-    val subscriptionProgress: Float
-        get() = if (subscriptionLimit > 0) subscriptionRequests.toFloat() / subscriptionLimit.toFloat() else 0f
+    val fiveHourLimitPercent: Float
+        get() = if (fiveHourLimitMax > 0) (fiveHourLimitRemaining.toFloat() / fiveHourLimitMax.toFloat()) * 100f else 0f
 
-    val toolProgress: Float
-        get() = if (toolLimit > 0) toolRequests.toFloat() / toolLimit.toFloat() else 0f
+    val weeklyCreditsProgress: Float
+        get() = (weeklyCreditsPercentRemaining / 100.0).toFloat()
 }
 
 @Serializable
