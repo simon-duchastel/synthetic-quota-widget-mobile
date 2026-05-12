@@ -18,7 +18,7 @@ data class RollingFiveHourLimit(
     @SerialName("tickPercent")
     val tickPercent: Double,
     @SerialName("remaining")
-    val remaining: Int,
+    val remaining: Double,
     @SerialName("max")
     val max: Int,
     @SerialName("limited")
