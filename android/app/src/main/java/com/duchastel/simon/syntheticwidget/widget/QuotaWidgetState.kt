@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class QuotaData(
     // Five-hour limit data
-    val fiveHourLimitMax: Int,
+    val fiveHourLimitMax: Double,
     val fiveHourLimitRemaining: Double,
     val fiveHourLimitTickPercent: Double,
     val fiveHourLimitNextTickAt: String? = null,
@@ -16,8 +16,8 @@ data class QuotaData(
     val weeklyCreditsPercentRemaining: Double,
     val weeklyCreditsNextRegenAt: String? = null,
 ) {
-    val fiveHourLimitUsed: Int
-        get() = (fiveHourLimitMax - fiveHourLimitRemaining).toInt()
+    val fiveHourLimitUsed: Double
+        get() = fiveHourLimitMax - fiveHourLimitRemaining
 
     val fiveHourLimitProgress: Float
         get() = if (fiveHourLimitMax > 0) fiveHourLimitRemaining.toFloat() / fiveHourLimitMax.toFloat() else 0f

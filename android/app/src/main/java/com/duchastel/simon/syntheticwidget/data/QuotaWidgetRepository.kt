@@ -84,7 +84,7 @@ class QuotaWidgetRepository @Inject constructor(
 }
 
 // Five-hour limit keys
-private val FIVE_HOUR_MAX = intPreferencesKey("five_hour_max")
+private val FIVE_HOUR_MAX = doublePreferencesKey("five_hour_max")
 private val FIVE_HOUR_REMAINING = doublePreferencesKey("five_hour_remaining")
 private val FIVE_HOUR_TICK_PERCENT = doublePreferencesKey("five_hour_tick_percent")
 private val FIVE_HOUR_NEXT_TICK_AT = stringPreferencesKey("five_hour_next_tick_at")
