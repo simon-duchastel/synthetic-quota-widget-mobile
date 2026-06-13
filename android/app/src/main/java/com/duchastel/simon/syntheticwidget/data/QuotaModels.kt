@@ -20,7 +20,7 @@ data class RollingFiveHourLimit(
     @SerialName("remaining")
     val remaining: Double,
     @SerialName("max")
-    val max: Int,
+    val max: Double,
     @SerialName("limited")
     val limited: Boolean,
 )
